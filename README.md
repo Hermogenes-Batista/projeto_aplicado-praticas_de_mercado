@@ -1,0 +1,1 @@
+# projeto_aplicado-praticas_de_mercado
