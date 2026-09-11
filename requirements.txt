@@ -1,0 +1,11 @@
+asgiref==3.11.1
+Django==4.2.30
+django-rest-framework==0.1.0
+djangorestframework==3.16.1
+graphene==3.4.3
+graphql-core==3.2.12
+graphql-relay==3.2.0
+python-dateutil==2.9.0.post0
+six==1.17.0
+sqlparse==0.5.5
+typing_extensions==4.16.0
