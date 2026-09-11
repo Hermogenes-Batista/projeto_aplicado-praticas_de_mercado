@@ -1,0 +1,24 @@
+{% load socialaccount %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Login com Google</title>
+</head>
+<body>
+
+    <h1>Bem-vindo ao nosso site</h1>
+
+    {% if user.is_authenticated %}
+        <p>Olá, <strong>{{ user.email }}</strong>! Você está logado.</p>
+        <a href="{% url 'account_logout' %}">Sair da conta</a>
+    {% else %}
+        <p>Você não está logado. Escolha uma das opções abaixo:</p>
+        <!-- Link que inicia o fluxo de autorização do Google -->
+        <a href="{% provider_login_url 'google' %}" style="padding: 10px; background: #4285F4; color: white; text-decoration: none; border-radius: 5px;">
+            Entrar / Cadastrar com o Google
+        </a>
+    {% endif %}
+
+</body>
+</html>
