@@ -1,0 +1,13 @@
+.git
+.gitignore
+.idea
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+db.sqlite3
+.DS_Store
+frontend/node_modules
+frontend/.next
