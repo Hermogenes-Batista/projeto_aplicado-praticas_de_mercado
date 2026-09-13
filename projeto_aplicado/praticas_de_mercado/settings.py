@@ -9,23 +9,40 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
+import os
 import json
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-ENV = json.load(open(f"{BASE_DIR}/../secret.json"))
+
+secret_file = BASE_DIR / ".." / "secret.json"
+if secret_file.exists():
+    try:
+        with open(secret_file) as f:
+            ENV = json.load(f)
+    except Exception:
+        ENV = {}
+else:
+    ENV = {}
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = ENV["django"]["secret_key"]
+SECRET_KEY = os.environ.get(
+    "DJANGO_SECRET_KEY",
+    ENV.get("django", {}).get("secret_key", "django-insecure-default-dev-secret-key")
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", "True").lower() in ("true", "1", "yes")
 
-ALLOWED_HOSTS = ENV["django"].get("allowed_hosts", ["*"])
+allowed_hosts_env = os.environ.get("DJANGO_ALLOWED_HOSTS")
+if allowed_hosts_env:
+    ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_env.split(",") if h.strip()]
+else:
+    ALLOWED_HOSTS = ENV.get("django", {}).get("allowed_hosts", ["*"])
 
 
 # Application definition
@@ -40,6 +57,13 @@ INSTALLED_APPS = [
 
     'django.contrib.sites',
 
+    # CORS Headers
+    'corsheaders',
+
+    # Django REST Framework & Token Authentication
+    'rest_framework',
+    'rest_framework.authtoken',
+
     # Main Apps of django-allauth
     'allauth',
     'allauth.account',
@@ -52,7 +76,19 @@ INSTALLED_APPS = [
     'handle_oauth',
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
+}
+
+
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -88,12 +124,30 @@ WSGI_APPLICATION = 'praticas_de_mercado.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+DB_ENGINE = os.environ.get("DB_ENGINE", "").lower()
+DB_HOST = os.environ.get("DB_HOST", "")
+
+if DB_ENGINE == "mysql" or DB_HOST:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': os.environ.get('DB_NAME', 'projeto_db'),
+            'USER': os.environ.get('DB_USER', 'app_user'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', 'app_password'),
+            'HOST': DB_HOST or 'db',
+            'PORT': os.environ.get('DB_PORT', '3306'),
+            'OPTIONS': {
+                'charset': 'utf8mb4',
+            },
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -155,7 +209,29 @@ ACCOUNT_EMAIL_VERIFICATION = 'none'      # Como o Google já verificou o e-mail,
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
+# CORS Configuration
+CORS_ALLOW_ALL_ORIGINS = os.environ.get("CORS_ALLOW_ALL_ORIGINS", "True").lower() in ("true", "1", "yes")
+cors_origins_env = os.environ.get("CORS_ALLOWED_ORIGINS", "")
+if cors_origins_env:
+    CORS_ALLOWED_ORIGINS = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
+else:
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
+
 # Configuração do provedor do Google (Escopos para pegar e-mail e perfil)
+google_client_id = (
+    os.environ.get("GOOGLE_CLIENT_ID")
+    or os.environ.get("CLIENT_ID")
+    or ENV.get("web", {}).get("client_id", "")
+)
+google_client_secret = (
+    os.environ.get("GOOGLE_CLIENT_SECRET")
+    or os.environ.get("SECRET_KEY")
+    or ENV.get("web", {}).get("client_secret", "")
+)
+
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'SCOPE': [
@@ -166,9 +242,10 @@ SOCIALACCOUNT_PROVIDERS = {
             'access_type': 'online',
         },
         'APP': {
-            'client_id': ENV["web"]["client_id"],
-            'secret': ENV["web"]["client_secret"],
+            'client_id': google_client_id,
+            'secret': google_client_secret,
             'key': "",
         }
     }
 }
+

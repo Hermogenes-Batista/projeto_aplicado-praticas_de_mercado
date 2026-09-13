@@ -17,11 +17,49 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import TemplateView
+from django.http import JsonResponse
+from django.db import connection
+
+
+def health_check(request):
+    db_ok = True
+    db_vendor = "unknown"
+    error_message = None
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            cursor.fetchone()
+        db_vendor = connection.vendor
+    except Exception as e:
+        db_ok = False
+        error_message = str(e)
+
+    response_data = {
+        "status": "ok" if db_ok else "error",
+        "service": "django",
+        "database": {
+            "status": "connected" if db_ok else "disconnected",
+            "vendor": db_vendor,
+        }
+    }
+    if error_message:
+        response_data["database"]["error"] = error_message
+
+    return JsonResponse(response_data, status=200 if db_ok else 503)
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),  # Inclui todas as rotas de login/signup/oauth
 
+    # Health check endpoint for Docker / Frontend verification
+    path('api/health/', health_check, name='health_check'),
+
+    # REST API de Autenticação para Frontend (Next.js / DRF / GraphQL)
+    path('api/auth/', include('handle_oauth.urls')),
+
     # Uma página inicial simples apenas para testar o botão
     path('', TemplateView.as_view(template_name='oauth/home.html'), name='home'),
 ]
+
+
