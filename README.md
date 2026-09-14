@@ -61,10 +61,12 @@ docker compose down -v
   - **Sign-in Side Template:** [http://localhost:3000/sign-in-side](http://localhost:3000/sign-in-side) - Layout oficial de autenticação em duas colunas (Branding + Formulário) com suporte ao Google OAuth.
   - **Sign-in Template:** [http://localhost:3000/sign-in](http://localhost:3000/sign-in) - Layout oficial clássico de login com card centralizado.
 - **Backend (Django REST Framework):** [http://localhost:8000](http://localhost:8000)
-- **API de Autenticação Desacoplada (Google / DRF Token):**
-  - `POST /api/auth/google/`: Recebe `credential` (Google ID Token) ou `code` do frontend, valida no Google, cria/busca usuário no MySQL e retorna o **Token DRF** (`Token.key`).
-  - `GET /api/auth/me/`: Retorna os dados do usuário autenticado via Header `Authorization: Token <token>`.
-  - `POST /api/auth/logout/`: Revoga o token de autenticação no banco MySQL.
+- **API de Autenticação Desacoplada (Google / JWT):**
+  - `POST /api/auth/google/`: Recebe `credential` (Google ID Token) ou `code` do frontend, valida no Google, cria/busca usuário no MySQL e retorna `access` e `refresh`.
+  - `POST /api/auth/token/`: Obtém `access` e `refresh` usando `username` e `password`.
+  - `POST /api/auth/token/refresh/`: Obtém um novo `access` usando um `refresh` válido.
+  - `GET /api/auth/me/`: Retorna os dados do usuário autenticado via Header `Authorization: Bearer <access>`.
+  - `POST /api/auth/logout/`: Invalida o refresh token enviado.
   - `GET /api/auth/config/`: Expõe o `client_id` do Google para o frontend.
 - **Health Check API:** [http://localhost:8000/api/health/](http://localhost:8000/api/health/)
   - Retorna o status do Django e da conexão ativa com o MySQL.
@@ -73,17 +75,17 @@ docker compose down -v
 
 ---
 
-## 🔐 Como utilizar o Token no DRF e GraphQL
+## 🔐 Como utilizar o JWT no DRF e GraphQL
 
 O fluxo de autenticação foi 100% desacoplado dos templates do Django:
 1. O frontend Next.js executa o login do Google (via **Google Identity Services** ou formulário).
 2. O Next.js envia a credencial para `POST /api/auth/google/`.
-3. O Django valida a credencial com a Google API e gera um token persistido (`rest_framework.authtoken.models.Token`).
-4. O Next.js armazena esse token para requisições subsequentes.
+3. O Django valida a credencial com a Google API e gera tokens JWT com validade de 5 minutos para o access token e 1 dia para o refresh token.
+4. O Next.js armazena os tokens e renova o access token quando necessário.
 
 ### Exemplo de uso no Header (DRF e GraphQL):
 ```http
-Authorization: Token 9507c49728ed8764e8998189ce79ad27878b9a51
+Authorization: Bearer eyJ...
 ```
 
 ### Exemplo de chamada GraphQL autenticada (JavaScript / Next.js):
@@ -92,7 +94,7 @@ const response = await fetch('http://localhost:8000/graphql/', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
-    'Authorization': `Token ${token}`,
+    'Authorization': `Bearer ${token}`,
   },
   body: JSON.stringify({
     query: `query { currentUser { id email username } }`

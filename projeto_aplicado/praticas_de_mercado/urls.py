@@ -19,6 +19,7 @@ from django.urls import path, include
 from django.views.generic import TemplateView
 from django.http import JsonResponse
 from django.db import connection
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 
 def health_check(request):
@@ -59,9 +60,10 @@ urlpatterns = [
 
     # REST API de Autenticação para Frontend (Next.js / DRF / GraphQL)
     path('api/auth/', include('handle_oauth.urls')),
+    path('api/auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
     # Uma página inicial simples apenas para testar o botão
     path('', TemplateView.as_view(template_name='oauth/home.html'), name='home'),
 ]
-
 

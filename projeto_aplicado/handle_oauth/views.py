@@ -3,10 +3,11 @@ import requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from rest_framework import status
-from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import RefreshToken
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -33,7 +34,7 @@ class GoogleAuthAPIView(APIView):
     - ou 'code' (código OAuth2 para troca no backend)
 
     Valida o token com a API oficial do Google, cria ou recupera o usuário no MySQL,
-    e retorna um Token de Autenticação do Django REST Framework (DRF) e os dados do usuário.
+    e retorna tokens JWT e os dados do usuário.
     """
     permission_classes = [AllowAny]
 
@@ -180,13 +181,13 @@ class GoogleAuthAPIView(APIView):
         except Exception as e:
             logger.debug(f"SocialAccount linkage notice: {e}")
 
-        # Gerar / recuperar o Token de Autenticação do DRF (persistido no MySQL)
-        token, _ = Token.objects.get_or_create(user=user)
+        refresh = RefreshToken.for_user(user)
 
         return Response({
-            "token": token.key,
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
             "user": {
-                "id": user.id,
+                "id": str(user.id),
                 "username": user.username,
                 "email": user.email,
                 "first_name": user.first_name,
@@ -200,14 +201,14 @@ class GoogleAuthAPIView(APIView):
 class UserMeAPIView(APIView):
     """
     Endpoint autenticado para obter dados do usuário logado via Token.
-    Header esperado: Authorization: Token <seu_token>
+    Header esperado: Authorization: Bearer <access_token>
     """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
         return Response({
-            "id": user.id,
+            "id": str(user.id),
             "username": user.username,
             "email": user.email,
             "first_name": user.first_name,
@@ -218,17 +219,21 @@ class UserMeAPIView(APIView):
 
 class LogoutAPIView(APIView):
     """
-    Revoga / remove o Token de autenticação do usuário.
+    Encerra a sessão invalidando o refresh token recebido.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def post(self, request):
-        try:
-            # Exclui o token no MySQL
-            request.auth.delete()
-        except (AttributeError, Exception):
-            pass
+        refresh_token = request.data.get("refresh")
+        if refresh_token:
+            try:
+                RefreshToken(refresh_token).blacklist()
+            except TokenError:
+                return Response(
+                    {"detail": "Refresh token inválido ou expirado."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
         return Response(
-            {"detail": "Sessão encerrada e token revogado com sucesso."},
+            {"detail": "Sessão encerrada."},
             status=status.HTTP_200_OK
         )

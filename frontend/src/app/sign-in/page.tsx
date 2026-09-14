@@ -90,7 +90,7 @@ export default function SignIn() {
             </Alert>
           )}
 
-          {/* Google Sign In via Frontend with DRF Token */}
+          {/* Google Sign In via Frontend with JWT */}
           <GoogleSignInButton redirectAfterLogin="/" />
 
 

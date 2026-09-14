@@ -50,6 +50,7 @@ const INACTIVITY_LOGOUT_MS = 10 * 60 * 1000;
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [clientId, setClientId] = useState<string>("");
@@ -59,6 +60,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [inactivityResetKey, setInactivityResetKey] = useState(0);
   const inactivityWarningRef = useRef(false);
   const router = useRouter();
+
+  const refreshAccessToken = useCallback(async (storedRefreshToken: string) => {
+    try {
+      const res = await fetch(`${API_URL}/api/auth/token/refresh/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh: storedRefreshToken }),
+      });
+
+      if (!res.ok) {
+        return null;
+      }
+
+      const data = await res.json();
+      setToken(data.access);
+      localStorage.setItem("drf_token", data.access);
+      if (data.refresh) {
+        setRefreshToken(data.refresh);
+        localStorage.setItem("drf_refresh_token", data.refresh);
+      }
+      return data.access as string;
+    } catch {
+      return null;
+    }
+  }, []);
 
   // Obter o Google Client ID configurado no backend
   useEffect(() => {
@@ -76,10 +102,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Recuperar token persistido no localStorage ao iniciar
   useEffect(() => {
     const savedToken = localStorage.getItem("drf_token");
+    const savedRefreshToken = localStorage.getItem("drf_refresh_token");
     const savedUser = localStorage.getItem("drf_user");
 
-    if (savedToken && savedUser) {
+    if (savedToken && savedRefreshToken && savedUser) {
       setToken(savedToken);
+      setRefreshToken(savedRefreshToken);
       try {
         setUser(JSON.parse(savedUser));
       } catch (e) {
@@ -89,35 +117,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Validar token com o backend
       fetch(`${API_URL}/api/auth/me/`, {
         headers: {
-          Authorization: `Token ${savedToken}`,
+          Authorization: `Bearer ${savedToken}`,
         },
       })
-        .then((res) => {
-          if (!res.ok) {
-            // Token expirado ou inválido
-            logout();
-          } else {
+        .then(async (res) => {
+          if (res.ok) {
             return res.json();
           }
+          if (res.status === 401) {
+            const newAccessToken = await refreshAccessToken(savedRefreshToken);
+            if (newAccessToken) {
+              const refreshedRes = await fetch(`${API_URL}/api/auth/me/`, {
+                headers: { Authorization: `Bearer ${newAccessToken}` },
+              });
+              if (refreshedRes.ok) {
+                return refreshedRes.json();
+              }
+            }
+          }
+          throw new Error("Sessão inválida ou expirada.");
         })
         .then((userData) => {
           if (userData) {
             setUser((prev) => ({ ...prev, ...userData }));
           }
         })
-        .catch(() => {})
+        .catch(() => {
+          setToken(null);
+          setRefreshToken(null);
+          setUser(null);
+          localStorage.removeItem("drf_token");
+          localStorage.removeItem("drf_refresh_token");
+          localStorage.removeItem("drf_user");
+          router.push("/sign-in");
+        })
         .finally(() => setLoading(false));
     } else {
       setLoading(false);
       router.push("/sign-in")
     }
-  }, []);
+  }, [refreshAccessToken, router]);
 
-  const handleAuthSuccess = (tokenKey: string, userData: User) => {
-    setToken(tokenKey);
+  const handleAuthSuccess = (
+    accessToken: string,
+    newRefreshToken: string,
+    userData: User,
+  ) => {
+    setToken(accessToken);
+    setRefreshToken(newRefreshToken);
     setUser(userData);
     setError(null);
-    localStorage.setItem("drf_token", tokenKey);
+    localStorage.setItem("drf_token", accessToken);
+    localStorage.setItem("drf_refresh_token", newRefreshToken);
     localStorage.setItem("drf_user", JSON.stringify(userData));
   };
 
@@ -137,7 +188,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(data.error || "Falha na autenticação com o Google.");
       }
 
-      handleAuthSuccess(data.token, data.user);
+      handleAuthSuccess(data.access, data.refresh, data.user);
       return true;
     } catch (err: any) {
       setError(err.message || "Erro de autenticação.");
@@ -166,7 +217,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(data.error || "Falha ao validar código Google.");
       }
 
-      handleAuthSuccess(data.token, data.user);
+      handleAuthSuccess(data.access, data.refresh, data.user);
       return true;
     } catch (err: any) {
       setError(err.message || "Erro de autenticação.");
@@ -196,7 +247,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(data.error || "Falha no login demo.");
       }
 
-      handleAuthSuccess(data.token, data.user);
+      handleAuthSuccess(data.access, data.refresh, data.user);
       return true;
     } catch (err: any) {
       setError(err.message || "Erro no login demo.");
@@ -208,24 +259,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Logout e revogação do Token
   const logout = useCallback(async () => {
-    if (token) {
+    if (refreshToken) {
       try {
         await fetch(`${API_URL}/api/auth/logout/`, {
           method: "POST",
-          headers: {
-            Authorization: `Token ${token}`,
-          },
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refresh: refreshToken }),
         });
       } catch (e) {
         // Ignora erro de rede no logout
       }
     }
     setToken(null);
+    setRefreshToken(null);
     setUser(null);
     localStorage.removeItem("drf_token");
+    localStorage.removeItem("drf_refresh_token");
     localStorage.removeItem("drf_user");
     router.push("/sign-in")
-  }, [router, token]);
+  }, [refreshToken, router]);
 
   // Encerrar a sessão após 120 segundos sem interação enquanto o usuário estiver logado.
   useEffect(() => {
@@ -297,12 +349,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!token) {
       throw new Error("Usuário não autenticado");
     }
-    const res = await fetch(`${API_URL}/api/auth/me/`, {
+    let accessToken = token;
+    let res = await fetch(`${API_URL}/api/auth/me/`, {
       headers: {
-        Authorization: `Token ${token}`,
+        Authorization: `Bearer ${accessToken}`,
       },
     });
+    if (res.status === 401 && refreshToken) {
+      const newAccessToken = await refreshAccessToken(refreshToken);
+      if (newAccessToken) {
+        accessToken = newAccessToken;
+        res = await fetch(`${API_URL}/api/auth/me/`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+      }
+    }
     if (!res.ok) {
+      await logout();
       throw new Error(`Erro ${res.status}: ${res.statusText}`);
     }
     return await res.json();

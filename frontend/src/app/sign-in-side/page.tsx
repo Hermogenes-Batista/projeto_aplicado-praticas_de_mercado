@@ -139,7 +139,7 @@ export default function SignInSide() {
             </Alert>
           )}
 
-          {/* Google OAuth Login Button via Frontend (Decoupled with DRF Token) */}
+          {/* Google OAuth Login Button via Frontend (Decoupled with JWT) */}
           <GoogleSignInButton redirectAfterLogin="/" />
 
           <Divider sx={{ my: 2 }}>
