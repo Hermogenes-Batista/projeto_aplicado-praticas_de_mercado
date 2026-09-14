@@ -5,9 +5,18 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import {useRouter} from "next/navigation";
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+} from "@mui/material";
 
 export interface User {
   id: number;
@@ -35,7 +44,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-const INACTIVITY_TIMEOUT_MS = 120_000;
+const INACTIVITY_WARNING_MS = 5 * 60 * 1000;
+const INACTIVITY_LOGOUT_MS = 10 * 60 * 1000;
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -43,6 +53,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [clientId, setClientId] = useState<string>("");
+  const [showInactivityWarning, setShowInactivityWarning] = useState(false);
+  const [inactivityRemainingSeconds, setInactivityRemainingSeconds] =
+    useState<number | null>(null);
+  const [inactivityResetKey, setInactivityResetKey] = useState(0);
+  const inactivityWarningRef = useRef(false);
   const router = useRouter();
 
   // Obter o Google Client ID configurado no backend
@@ -215,16 +230,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Encerrar a sessão após 120 segundos sem interação enquanto o usuário estiver logado.
   useEffect(() => {
     if (!user || !token) {
+      inactivityWarningRef.current = false;
+      setShowInactivityWarning(false);
+      setInactivityRemainingSeconds(null);
       return;
     }
 
-    let inactivityTimer: ReturnType<typeof setTimeout>;
+    let warningTimer: ReturnType<typeof setTimeout>;
+    let logoutTimer: ReturnType<typeof setTimeout>;
+    let countdownTimer: ReturnType<typeof setInterval>;
 
     const resetInactivityTimer = () => {
-      clearTimeout(inactivityTimer);
-      inactivityTimer = setTimeout(() => {
+      if (inactivityWarningRef.current) {
+        return;
+      }
+
+      clearTimeout(warningTimer);
+      clearTimeout(logoutTimer);
+      clearInterval(countdownTimer);
+      setShowInactivityWarning(false);
+      setInactivityRemainingSeconds(null);
+
+      warningTimer = setTimeout(() => {
+        inactivityWarningRef.current = true;
+        setShowInactivityWarning(true);
+        setInactivityRemainingSeconds(
+          Math.ceil((INACTIVITY_LOGOUT_MS - INACTIVITY_WARNING_MS) / 1000),
+        );
+        countdownTimer = setInterval(() => {
+          setInactivityRemainingSeconds((seconds) =>
+            seconds === null ? null : Math.max(seconds - 1, 0),
+          );
+        }, 1000);
+      }, INACTIVITY_WARNING_MS);
+      logoutTimer = setTimeout(() => {
         void logout();
-      }, INACTIVITY_TIMEOUT_MS);
+      }, INACTIVITY_LOGOUT_MS);
     };
 
     const activityEvents: Array<keyof WindowEventMap> = [
@@ -242,17 +283,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     resetInactivityTimer();
 
     return () => {
-      clearTimeout(inactivityTimer);
+      clearTimeout(warningTimer);
+      clearTimeout(logoutTimer);
+      clearInterval(countdownTimer);
       activityEvents.forEach((eventName) => {
         window.removeEventListener(eventName, resetInactivityTimer);
       });
     };
-  }, [logout, token, user]);
+  }, [inactivityResetKey, logout, token, user]);
 
   // Testar requisição protegida ao backend com o Token
   const testAuthenticatedRequest = async () => {
     if (!token) {
-      console.log("Aqui testa se esta autenticado?", {token})
       throw new Error("Usuário não autenticado");
     }
     const res = await fetch(`${API_URL}/api/auth/me/`, {
@@ -265,8 +307,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     return await res.json();
   };
-
-  console.log("Esta autenticado?", {token})
 
   return (
     <AuthContext.Provider
@@ -284,6 +324,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }}
     >
       {children}
+      <Dialog
+        open={showInactivityWarning}
+        onClose={() => undefined}
+        aria-labelledby="inactivity-dialog-title"
+        aria-describedby="inactivity-dialog-description"
+      >
+        <DialogTitle id="inactivity-dialog-title">Ainda está aí?</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="inactivity-dialog-description">
+            Sua sessão será encerrada por inatividade.
+            {inactivityRemainingSeconds !== null &&
+              inactivityRemainingSeconds <= 30 && (
+                <>
+                  {" "}<br/>Logout automático em{" "}
+                  <strong>{inactivityRemainingSeconds}s</strong>.
+                </>
+              )}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button color="inherit" onClick={() => void logout()}>
+            Deslogar
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              inactivityWarningRef.current = false;
+              setShowInactivityWarning(false);
+              setInactivityResetKey((key) => key + 1);
+            }}
+            autoFocus
+          >
+            Ainda estou ativo
+          </Button>
+        </DialogActions>
+      </Dialog>
     </AuthContext.Provider>
   );
 }
