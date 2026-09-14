@@ -336,7 +336,7 @@ export default function Dashboard() {
             </Button>
           </Box>
 
-          {/* Autenticação & Token Card */}
+          {/* Autenticação & JWT Card */}
           <Paper
             elevation={2}
             sx={{
@@ -410,6 +410,33 @@ export default function Dashboard() {
                     </Tooltip>
                   </Paper>
                 </Box>
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="subtitle2" fontWeight={700} color="text.secondary" gutterBottom>
+                    REFRESH TOKEN DE AUTENTICAÇÃO DO DJANGO REST FRAMEWORK (DRF / GRAPHQL)
+                  </Typography>
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      p: 1.5,
+                      backgroundColor: "#ffffff",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      fontFamily: "monospace",
+                      fontSize: "0.95rem",
+                      borderRadius: 2,
+                    }}
+                  >
+                    <Typography sx={{ fontFamily: "monospace", wordBreak: "break-all" }}>
+                      {localStorage.getItem("drf_refresh_token")}
+                    </Typography>
+                    <Tooltip title={copied ? "Copiado!" : "Copiar Token"}>
+                      <IconButton onClick={handleCopyToken} color="primary" size="small">
+                        <ContentCopyIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Paper>
+                </Box>
 
                 <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ mt: 2.5 }} alignItems={{ md: "center" }}>
                   <Button
@@ -422,7 +449,7 @@ export default function Dashboard() {
                     Testar Requisição DRF (/api/auth/me/)
                   </Button>
                   <Typography variant="caption" color="text.secondary">
-                    Header utilizado: <code>Authorization: Token {token.slice(0, 8)}...</code>
+                    Header utilizado: <code>Authorization: Bearer {token.slice(0, 8)}...</code>
                   </Typography>
                 </Stack>
 
@@ -455,7 +482,7 @@ export default function Dashboard() {
                       Autenticação Desacoplada (Frontend &rarr; Django DRF)
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, maxWidth: 650 }}>
-                      O login do Google ocorre 100% no Next.js (sem templates do Django). As credenciais são validadas pelo backend Django REST, que cria o usuário no MySQL e retorna o <strong>Token DRF</strong>.
+                      O login do Google ocorre 100% no Next.js (sem templates do Django). As credenciais são validadas pelo backend Django REST, que cria o usuário no MySQL e retorna tokens JWT.
                     </Typography>
                   </Box>
                   <Stack direction="row" spacing={1.5}>
@@ -542,7 +569,7 @@ export default function Dashboard() {
                     Django REST
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    Porta: <strong>8000</strong> &bull; DRF Token Auth
+                    Porta: <strong>8000</strong> &bull; JWT Auth
                   </Typography>
                 </CardContent>
               </Card>
@@ -744,7 +771,7 @@ export default function Dashboard() {
         open={copied}
         autoHideDuration={2000}
         onClose={() => setCopied(false)}
-        message="Token copiado para a área de transferência!"
+        message="Access token copiado para a área de transferência!"
       />
     </Box>
   );

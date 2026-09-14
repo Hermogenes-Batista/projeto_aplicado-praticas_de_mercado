@@ -37,7 +37,7 @@ function CallbackHandler() {
     if (hasCalledRef.current) return;
     hasCalledRef.current = true;
 
-    // Enviar o código para o backend Django validar e gerar o Token DRF
+    // Enviar o código para o backend Django validar e gerar os tokens JWT
     loginWithGoogleCode(code)
       .then((success) => {
         if (success) {
@@ -68,7 +68,7 @@ function CallbackHandler() {
             Processando autenticação com o Google...
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Validando credenciais com o backend Django e gerando Token DRF.
+            Validando credenciais com o backend Django e gerando tokens JWT.
           </Typography>
         </Stack>
       )}

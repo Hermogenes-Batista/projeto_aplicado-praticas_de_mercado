@@ -4,7 +4,7 @@ import { AuthProvider } from "@/context/AuthContext";
 
 export const metadata: Metadata = {
   title: "Projeto Aplicado - Next.js + Django + MySQL (Material UI)",
-  description: "MUI Free Templates: Dashboard, Sign-in e Sign-in Side com integração Django e DRF Token",
+  description: "MUI Free Templates: Dashboard, Sign-in e Sign-in Side com integração Django e JWT",
 };
 
 export default function RootLayout({

@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 import os
+from datetime import timedelta
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -51,9 +52,9 @@ INSTALLED_APPS = [
     # CORS Headers
     'corsheaders',
 
-    # Django REST Framework & Token Authentication
+    # Django REST Framework & JWT Authentication
     'rest_framework',
-    'rest_framework.authtoken',
+    'rest_framework_simplejwt.token_blacklist',
 
     # Main Apps of django-allauth
     'allauth',
@@ -71,12 +72,26 @@ AUTH_USER_MODEL = 'handle_oauth.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
 }
 
 
@@ -186,7 +201,7 @@ AUTHENTICATION_BACKENDS = [
 
 # Configurações específicas do comportamento do Allauth
 ACCOUNT_LOGIN_METHODS = {'email'}
-ACCOUNT_SIGNUP_FIELDS = {'email'}
+ACCOUNT_SIGNUP_FIELDS = {'email*'}
 ACCOUNT_EMAIL_VERIFICATION = 'none'      # Como o Google já verificou o e-mail, não precisamos exigir verificação extra
 
 # URLs de redirecionamento após o login/logout bem-sucedido
