@@ -37,7 +37,7 @@ function CallbackHandler() {
     if (hasCalledRef.current) return;
     hasCalledRef.current = true;
 
-    // Enviar o código para o backend Django validar e gerar os tokens JWT
+    // Send the code to the Django backend for validation and JWT generation
     loginWithGoogleCode(code)
       .then((success) => {
         if (success) {

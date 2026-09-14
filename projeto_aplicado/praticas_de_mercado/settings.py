@@ -190,21 +190,21 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# ID do site padrão (obrigatório para o django-allauth)
+# Default site ID (required by django-allauth)
 SITE_ID = 1
 
-# Configurações de autenticação do Django
+# Django authentication settings
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend', # Backend padrão do Django
-    'allauth.account.auth_backends.AuthenticationBackend', # Backend do Allauth
+    'django.contrib.auth.backends.ModelBackend', # Django's default backend
+    'allauth.account.auth_backends.AuthenticationBackend', # Allauth backend
 ]
 
-# Configurações específicas do comportamento do Allauth
+# Allauth behavior settings
 ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_SIGNUP_FIELDS = {'email*'}
-ACCOUNT_EMAIL_VERIFICATION = 'none'      # Como o Google já verificou o e-mail, não precisamos exigir verificação extra
+ACCOUNT_EMAIL_VERIFICATION = 'none'      # Google already verified the email, so no extra verification is required
 
-# URLs de redirecionamento após o login/logout bem-sucedido
+# Redirect URLs after successful login/logout
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
@@ -219,7 +219,7 @@ else:
         "http://127.0.0.1:3000",
     ]
 
-# Configuração do provedor do Google (Escopos para pegar e-mail e perfil)
+# Google provider configuration (scopes for email and profile)
 google_client_id = (
     os.environ.get("GOOGLE_CLIENT_ID")
     or os.environ.get("CLIENT_ID")

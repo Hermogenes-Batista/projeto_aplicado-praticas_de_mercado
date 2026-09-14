@@ -15,7 +15,7 @@ User = get_user_model()
 
 class GoogleConfigAPIView(APIView):
     """
-    Retorna o Client ID do Google configurado no backend para o frontend Next.js.
+    Return the Google Client ID configured in the backend for the Next.js frontend.
     """
     permission_classes = [AllowAny]
 
@@ -29,12 +29,12 @@ class GoogleConfigAPIView(APIView):
 
 class GoogleAuthAPIView(APIView):
     """
-    Recebe as credenciais do Google enviadas pelo frontend (Next.js):
-    - 'id_token' ou 'credential' (Google Identity Services)
-    - ou 'code' (código OAuth2 para troca no backend)
+    Receive Google credentials sent by the frontend (Next.js):
+    - 'id_token' or 'credential' (Google Identity Services)
+    - or 'code' (OAuth2 code to exchange in the backend)
 
-    Valida o token com a API oficial do Google, cria ou recupera o usuário no MySQL,
-    e retorna tokens JWT e os dados do usuário.
+    Validate the token with the official Google API, create or retrieve the user
+    in MySQL, and return JWT tokens and the user's data.
     """
     permission_classes = [AllowAny]
 
@@ -46,10 +46,10 @@ class GoogleAuthAPIView(APIView):
 
         user_info = None
 
-        # 1. Fluxo via ID Token / Credential (Google Identity Services / Popup)
+        # 1. ID Token / Credential flow (Google Identity Services / Popup)
         if id_token:
             try:
-                # Validação oficial com endpoint tokeninfo do Google
+                # Official validation through Google's tokeninfo endpoint
                 verify_url = f"https://oauth2.googleapis.com/tokeninfo?id_token={id_token}"
                 res = requests.get(verify_url, timeout=10)
                 if res.status_code == 200:
@@ -76,7 +76,7 @@ class GoogleAuthAPIView(APIView):
                     status=status.HTTP_502_BAD_GATEWAY
                 )
 
-        # 2. Fluxo via Authorization Code
+        # 2. Authorization Code flow
         elif code:
             try:
                 provider_config = getattr(settings, 'SOCIALACCOUNT_PROVIDERS', {}).get('google', {})
@@ -96,7 +96,7 @@ class GoogleAuthAPIView(APIView):
                     token_data = token_res.json()
                     access_token = token_data.get("access_token")
 
-                    # Obter dados do usuário via userinfo endpoint
+                    # Get user data through the userinfo endpoint
                     userinfo_res = requests.get(
                         "https://www.googleapis.com/oauth2/v3/userinfo",
                         headers={"Authorization": f"Bearer {access_token}"},
@@ -137,7 +137,7 @@ class GoogleAuthAPIView(APIView):
 
         email = user_info["email"].lower().strip()
 
-        # Localizar ou criar usuário no MySQL via Django ORM
+        # Find or create the user in MySQL through the Django ORM
         user = User.objects.filter(email__iexact=email).first()
         if not user:
             base_username = email.split("@")[0]
@@ -156,7 +156,7 @@ class GoogleAuthAPIView(APIView):
             user.set_unusable_password()
             user.save()
         else:
-            # Atualizar nomes caso estejam vazios
+            # Update names when they are empty
             updated = False
             if not user.first_name and user_info.get("given_name"):
                 user.first_name = user_info["given_name"]
@@ -167,7 +167,7 @@ class GoogleAuthAPIView(APIView):
             if updated:
                 user.save()
 
-        # Tentar vincular com SocialAccount do Allauth se a tabela existir
+        # Try to link the user with an Allauth SocialAccount if the table exists
         try:
             from allauth.socialaccount.models import SocialAccount
             SocialAccount.objects.get_or_create(
@@ -200,8 +200,8 @@ class GoogleAuthAPIView(APIView):
 
 class UserMeAPIView(APIView):
     """
-    Endpoint autenticado para obter dados do usuário logado via Token.
-    Header esperado: Authorization: Bearer <access_token>
+    Authenticated endpoint for retrieving the logged-in user's data.
+    Expected header: Authorization: Bearer <access_token>
     """
     permission_classes = [IsAuthenticated]
 
@@ -219,7 +219,7 @@ class UserMeAPIView(APIView):
 
 class LogoutAPIView(APIView):
     """
-    Encerra a sessão invalidando o refresh token recebido.
+    End the session by invalidating the provided refresh token.
     """
     permission_classes = [AllowAny]
 

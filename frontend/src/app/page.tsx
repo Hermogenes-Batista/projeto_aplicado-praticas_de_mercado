@@ -336,7 +336,7 @@ export default function Dashboard() {
             </Button>
           </Box>
 
-          {/* Autenticação & JWT Card */}
+          {/* Authentication & JWT Card */}
           <Paper
             elevation={2}
             sx={{

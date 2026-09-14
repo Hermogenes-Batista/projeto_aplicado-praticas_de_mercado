@@ -90,7 +90,7 @@ export default function GoogleSignInButton({
     }
   }, [gisLoaded, clientId, loginWithGoogleCredential, redirectAfterLogin, router]);
 
-  // Fluxo de redirecionamento OAuth 2.0 padrão (não sofre com bloqueio de iframe do GIS)
+  // Standard OAuth 2.0 redirect flow (not affected by GIS iframe blocking)
   const handleRedirectOAuth = () => {
     if (!clientId) return;
     const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
@@ -115,7 +115,7 @@ export default function GoogleSignInButton({
         </Alert>
       )}
 
-      {/* Botão Alternativo: Fluxo OAuth 2.0 por Redirecionamento Direto */}
+      {/* Alternative button: OAuth 2.0 direct redirect flow */}
       <Button
         fullWidth
         variant="outlined"

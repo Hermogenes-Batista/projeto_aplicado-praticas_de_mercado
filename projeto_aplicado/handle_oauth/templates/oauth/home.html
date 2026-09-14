@@ -14,7 +14,7 @@
         <a href="{% url 'account_logout' %}">Sair da conta</a>
     {% else %}
         <p>Você não está logado. Escolha uma das opções abaixo:</p>
-        <!-- Link que inicia o fluxo de autorização do Google -->
+        <!-- Link that starts the Google authorization flow -->
         <a href="{% provider_login_url 'google' %}" style="padding: 10px; background: #4285F4; color: white; text-decoration: none; border-radius: 5px;">
             Entrar / Cadastrar com o Google
         </a>

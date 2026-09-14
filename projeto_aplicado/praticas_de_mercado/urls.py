@@ -58,12 +58,11 @@ urlpatterns = [
     # Health check endpoint for Docker / Frontend verification
     path('api/health/', health_check, name='health_check'),
 
-    # REST API de Autenticação para Frontend (Next.js / DRF / GraphQL)
+    # REST authentication API for the frontend (Next.js / DRF / GraphQL)
     path('api/auth/', include('handle_oauth.urls')),
     path('api/auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
-    # Uma página inicial simples apenas para testar o botão
+    # A simple home page for testing the button
     path('', TemplateView.as_view(template_name='oauth/home.html'), name='home'),
 ]
-
