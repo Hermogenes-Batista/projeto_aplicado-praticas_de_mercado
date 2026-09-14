@@ -10,21 +10,12 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 import os
-import json
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-secret_file = BASE_DIR / ".." / "secret.json"
-if secret_file.exists():
-    try:
-        with open(secret_file) as f:
-            ENV = json.load(f)
-    except Exception:
-        ENV = {}
-else:
-    ENV = {}
+load_dotenv(BASE_DIR.parent / ".env")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -32,7 +23,7 @@ else:
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get(
     "DJANGO_SECRET_KEY",
-    ENV.get("django", {}).get("secret_key", "django-insecure-default-dev-secret-key")
+    "django-insecure-default-dev-secret-key",
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -42,7 +33,7 @@ allowed_hosts_env = os.environ.get("DJANGO_ALLOWED_HOSTS")
 if allowed_hosts_env:
     ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_env.split(",") if h.strip()]
 else:
-    ALLOWED_HOSTS = ENV.get("django", {}).get("allowed_hosts", ["*"])
+    ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -75,6 +66,8 @@ INSTALLED_APPS = [
     # Custom Apps
     'handle_oauth',
 ]
+
+AUTH_USER_MODEL = 'handle_oauth.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -123,31 +116,22 @@ WSGI_APPLICATION = 'praticas_de_mercado.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
-DB_ENGINE = os.environ.get("DB_ENGINE", "").lower()
 DB_HOST = os.environ.get("DB_HOST", "")
 
-if DB_ENGINE == "mysql" or DB_HOST:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': os.environ.get('DB_NAME', 'projeto_db'),
-            'USER': os.environ.get('DB_USER', 'app_user'),
-            'PASSWORD': os.environ.get('DB_PASSWORD', 'app_password'),
-            'HOST': DB_HOST or 'db',
-            'PORT': os.environ.get('DB_PORT', '3306'),
-            'OPTIONS': {
-                'charset': 'utf8mb4',
-            },
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.environ.get('DB_NAME', 'projeto_db'),
+        'USER': os.environ.get('DB_USER', 'app_user'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'app_password'),
+        'HOST': DB_HOST,
+        'PORT': os.environ.get('DB_PORT', '3306'),
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+        },
     }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+}
+
 
 
 # Password validation
@@ -224,12 +208,12 @@ else:
 google_client_id = (
     os.environ.get("GOOGLE_CLIENT_ID")
     or os.environ.get("CLIENT_ID")
-    or ENV.get("web", {}).get("client_id", "")
+    or ""
 )
 google_client_secret = (
     os.environ.get("GOOGLE_CLIENT_SECRET")
     or os.environ.get("SECRET_KEY")
-    or ENV.get("web", {}).get("client_secret", "")
+    or ""
 )
 
 SOCIALACCOUNT_PROVIDERS = {
@@ -248,4 +232,3 @@ SOCIALACCOUNT_PROVIDERS = {
         }
     }
 }
-
