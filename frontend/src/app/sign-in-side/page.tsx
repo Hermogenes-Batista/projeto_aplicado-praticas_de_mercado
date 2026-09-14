@@ -56,40 +56,16 @@ export default function SignInSide() {
         <Box sx={{ zIndex: 1 }}>
           <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
             <Chip
-              label="MUI Free Template"
+              label="Segurança"
               color="primary"
               size="small"
+
               sx={{ fontWeight: 600 }}
-            />
-            <Chip
-              label="Sign-in Side"
-              variant="outlined"
-              size="small"
-              sx={{ color: "white", borderColor: "rgba(255,255,255,0.3)" }}
             />
           </Stack>
           <Typography variant="h3" component="h1" fontWeight={700} gutterBottom>
             Projeto Aplicado
           </Typography>
-          <Typography variant="h6" sx={{ color: "rgba(255,255,255,0.8)", mb: 4, maxWidth: 500 }}>
-            Plataforma moderna fullstack integrada com Next.js, Django REST Framework e MySQL 8.0.
-          </Typography>
-
-          <Stack spacing={2} sx={{ mt: 4 }}>
-            {[
-              "Estrutura oficial baseada no Material UI Sign-in Side Template",
-              "Autenticação social integrada via Google OAuth (Django Allauth)",
-              "Banco de dados relacional MySQL gerenciado via Docker Compose",
-              "Painel de controle responsivo e monitoramento em tempo real",
-            ].map((feature, idx) => (
-              <Stack key={idx} direction="row" spacing={1.5} alignItems="center">
-                <CheckCircleOutlineIcon sx={{ color: "#38bdf8" }} />
-                <Typography variant="body1" sx={{ color: "rgba(255,255,255,0.9)" }}>
-                  {feature}
-                </Typography>
-              </Stack>
-            ))}
-          </Stack>
         </Box>
 
         <Box

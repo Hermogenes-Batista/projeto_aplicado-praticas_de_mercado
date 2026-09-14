@@ -48,8 +48,10 @@ def health_check(request):
     return JsonResponse(response_data, status=200 if db_ok else 503)
 
 
+
+
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('not-logical/', admin.site.urls),
     path('accounts/', include('allauth.urls')),  # Inclui todas as rotas de login/signup/oauth
 
     # Health check endpoint for Docker / Frontend verification

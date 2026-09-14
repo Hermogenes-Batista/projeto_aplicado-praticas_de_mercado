@@ -55,6 +55,7 @@ import ScienceIcon from "@mui/icons-material/Science";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import NextLink from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import {useRouter} from "next/navigation";
 
 const drawerWidth = 240;
 
@@ -76,9 +77,9 @@ export default function Dashboard() {
   const [testResult, setTestResult] = React.useState<any | null>(null);
   const [testLoading, setTestLoading] = React.useState<boolean>(false);
   const [copied, setCopied] = React.useState(false);
+  const router = useRouter();
 
   const { user, token, logout, loginDemoUser, testAuthenticatedRequest } = useAuth();
-
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
   const fetchHealth = async () => {
@@ -150,28 +151,11 @@ export default function Dashboard() {
           </ListItemButton>
         </ListItem>
         <ListItem disablePadding>
-          <ListItemButton component={NextLink} href="/sign-in-side" sx={{ borderRadius: 2 }}>
-            <ListItemIcon sx={{ minWidth: 40 }}>
-              <LoginIcon />
-            </ListItemIcon>
-            <ListItemText primary="Sign-in Side" />
-          </ListItemButton>
-        </ListItem>
-        <ListItem disablePadding>
           <ListItemButton component={NextLink} href="/sign-in" sx={{ borderRadius: 2 }}>
             <ListItemIcon sx={{ minWidth: 40 }}>
               <VpnKeyIcon />
             </ListItemIcon>
-            <ListItemText primary="Sign-in Centrado" />
-          </ListItemButton>
-        </ListItem>
-        <ListItem disablePadding>
-          <ListItemButton component="a" href={`${apiUrl}/admin/`} target="_blank" sx={{ borderRadius: 2 }}>
-            <ListItemIcon sx={{ minWidth: 40 }}>
-              <StorageIcon />
-            </ListItemIcon>
-            <ListItemText primary="Django Admin" />
-            <OpenInNewIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+            <ListItemText primary="Sign-in" />
           </ListItemButton>
         </ListItem>
       </List>

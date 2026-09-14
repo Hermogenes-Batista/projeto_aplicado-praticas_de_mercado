@@ -1,6 +1,13 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+import {useRouter} from "next/navigation";
 
 export interface User {
   id: number;
@@ -28,6 +35,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const INACTIVITY_TIMEOUT_MS = 120_000;
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -35,12 +43,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [clientId, setClientId] = useState<string>("");
+  const router = useRouter();
 
   // Obter o Google Client ID configurado no backend
   useEffect(() => {
     fetch(`${API_URL}/api/auth/config/`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
+        console.log("auth config", data);
         if (data?.client_id) {
           setClientId(data.client_id);
         }
@@ -84,6 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .finally(() => setLoading(false));
     } else {
       setLoading(false);
+      router.push("/sign-in")
     }
   }, []);
 
@@ -181,7 +192,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Logout e revogação do Token
-  const logout = async () => {
+  const logout = useCallback(async () => {
     if (token) {
       try {
         await fetch(`${API_URL}/api/auth/logout/`, {
@@ -198,11 +209,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     localStorage.removeItem("drf_token");
     localStorage.removeItem("drf_user");
-  };
+    router.push("/sign-in")
+  }, [router, token]);
+
+  // Encerrar a sessão após 120 segundos sem interação enquanto o usuário estiver logado.
+  useEffect(() => {
+    if (!user || !token) {
+      return;
+    }
+
+    let inactivityTimer: ReturnType<typeof setTimeout>;
+
+    const resetInactivityTimer = () => {
+      clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(() => {
+        void logout();
+      }, INACTIVITY_TIMEOUT_MS);
+    };
+
+    const activityEvents: Array<keyof WindowEventMap> = [
+      "mousedown",
+      "mousemove",
+      "keydown",
+      "scroll",
+      "touchstart",
+      "click",
+    ];
+
+    activityEvents.forEach((eventName) => {
+      window.addEventListener(eventName, resetInactivityTimer);
+    });
+    resetInactivityTimer();
+
+    return () => {
+      clearTimeout(inactivityTimer);
+      activityEvents.forEach((eventName) => {
+        window.removeEventListener(eventName, resetInactivityTimer);
+      });
+    };
+  }, [logout, token, user]);
 
   // Testar requisição protegida ao backend com o Token
   const testAuthenticatedRequest = async () => {
-    if (!token) throw new Error("Usuário não autenticado");
+    if (!token) {
+      console.log("Aqui testa se esta autenticado?", {token})
+      throw new Error("Usuário não autenticado");
+    }
     const res = await fetch(`${API_URL}/api/auth/me/`, {
       headers: {
         Authorization: `Token ${token}`,
@@ -213,6 +265,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     return await res.json();
   };
+
+  console.log("Esta autenticado?", {token})
 
   return (
     <AuthContext.Provider
