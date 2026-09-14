@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Obter o Google Client ID configurado no backend
+  // Get the Google Client ID configured in the backend
   useEffect(() => {
     fetch(`${API_URL}/api/auth/config/`)
       .then((res) => (res.ok ? res.json() : null))
@@ -99,7 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .catch((err) => console.error("Erro ao carregar client_id:", err));
   }, []);
 
-  // Recuperar token persistido no localStorage ao iniciar
+  // Restore persisted tokens from localStorage on startup
   useEffect(() => {
     const savedToken = localStorage.getItem("drf_token");
     const savedRefreshToken = localStorage.getItem("drf_refresh_token");
@@ -114,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
       }
 
-      // Validar token com o backend
+      // Validate the token with the backend
       fetch(`${API_URL}/api/auth/me/`, {
         headers: {
           Authorization: `Bearer ${savedToken}`,
@@ -172,7 +172,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("drf_user", JSON.stringify(userData));
   };
 
-  // Login via Google ID Token / Credential (Google Identity Services)
+  // Login through a Google ID Token / Credential (Google Identity Services)
   const loginWithGoogleCredential = async (credential: string): Promise<boolean> => {
     setLoading(true);
     setError(null);
@@ -198,7 +198,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Login via Authorization Code
+  // Login through an Authorization Code
   const loginWithGoogleCode = async (code: string, redirectUri?: string): Promise<boolean> => {
     setLoading(true);
     setError(null);
@@ -227,7 +227,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Login de Demonstração / Dev (gera token real no MySQL)
+  // Demo / development login (generates a real token in MySQL)
   const loginDemoUser = async (email?: string, name?: string): Promise<boolean> => {
     setLoading(true);
     setError(null);
@@ -257,7 +257,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Logout e revogação do Token
+  // Log out and revoke the refresh token
   const logout = useCallback(async () => {
     if (refreshToken) {
       try {
@@ -267,7 +267,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           body: JSON.stringify({ refresh: refreshToken }),
         });
       } catch (e) {
-        // Ignora erro de rede no logout
+        // Ignore network errors during logout
       }
     }
     setToken(null);
@@ -279,7 +279,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push("/sign-in")
   }, [refreshToken, router]);
 
-  // Encerrar a sessão após 120 segundos sem interação enquanto o usuário estiver logado.
+  // End the session after 120 seconds without interaction while the user is logged in.
   useEffect(() => {
     if (!user || !token) {
       inactivityWarningRef.current = false;
@@ -344,7 +344,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [inactivityResetKey, logout, token, user]);
 
-  // Testar requisição protegida ao backend com o Token
+  // Test a protected backend request with the access token
   const testAuthenticatedRequest = async () => {
     if (!token) {
       throw new Error("Usuário não autenticado");
