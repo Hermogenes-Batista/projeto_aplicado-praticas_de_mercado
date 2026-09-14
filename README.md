@@ -70,6 +70,10 @@ docker compose down -v
   - `GET /api/auth/config/`: Expõe o `client_id` do Google para o frontend.
 - **Health Check API:** [http://localhost:8000/api/health/](http://localhost:8000/api/health/)
   - Retorna o status do Django e da conexão ativa com o MySQL.
+- **GraphQL API:** [http://localhost:8000/graphql/](http://localhost:8000/graphql/)
+  - `login`: autentica com usuário e senha e retorna tokens JWT.
+  - `logout`: invalida o refresh token informado.
+  - `me`: retorna os dados do usuário autenticado.
 - **Django Admin:** [http://localhost:8000/admin/](http://localhost:8000/admin/)
 - **MySQL:** `localhost:3306` (Usuário: `app_user`, Senha: `app_password`, Database: `projeto_db`)
 
@@ -116,6 +120,19 @@ docker compose exec backend python projeto_aplicado/manage.py createsuperuser
 *(Obs: As migrações já são aplicadas automaticamente pelo script de inicialização do container)*
 ```bash
 docker compose exec backend python projeto_aplicado/manage.py migrate
+```
+
+### Exportar o Schema GraphQL
+```bash
+docker compose exec backend python projeto_aplicado/manage.py graphql_schema \
+  --schema praticas_de_mercado.schema.schema \
+  --out frontend/graphql-schema.json
+```
+
+### Atualizar os tipos GraphQL do Frontend
+Depois de exportar o schema, gere os tipos e operações TypeScript no container do frontend:
+```bash
+docker compose exec frontend npm run update-types -- graphql-schema.json
 ```
 
 ### Acessar o Shell do MySQL via Linha de Comando

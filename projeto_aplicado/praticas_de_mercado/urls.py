@@ -15,12 +15,15 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
+from django.views.decorators.csrf import csrf_exempt
 from django.urls import path, include
 from django.views.generic import TemplateView
 from django.http import JsonResponse
 from django.db import connection
+from graphene_django.views import GraphQLView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+from .schema import schema
 
 def health_check(request):
     db_ok = True
@@ -62,6 +65,11 @@ urlpatterns = [
     path('api/auth/', include('handle_oauth.urls')),
     path('api/auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path(
+        'graphql/',
+        csrf_exempt(GraphQLView.as_view(schema=schema, graphiql=True)),
+        name='graphql',
+    ),
 
     # A simple home page for testing the button
     path('', TemplateView.as_view(template_name='oauth/home.html'), name='home'),

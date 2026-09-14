@@ -385,7 +385,7 @@ export default function Dashboard() {
 
                 <Box sx={{ mt: 2 }}>
                   <Typography variant="subtitle2" fontWeight={700} color="text.secondary" gutterBottom>
-                    TOKEN DE AUTENTICAÇÃO DO DJANGO REST FRAMEWORK (DRF / GRAPHQL)
+                    ACCESS TOKEN JWT (GRAPHQL)
                   </Typography>
                   <Paper
                     variant="outlined"
@@ -412,7 +412,7 @@ export default function Dashboard() {
                 </Box>
                 <Box sx={{ mt: 2 }}>
                   <Typography variant="subtitle2" fontWeight={700} color="text.secondary" gutterBottom>
-                    REFRESH TOKEN DE AUTENTICAÇÃO DO DJANGO REST FRAMEWORK (DRF / GRAPHQL)
+                    REFRESH TOKEN JWT (GRAPHQL)
                   </Typography>
                   <Paper
                     variant="outlined"
@@ -446,7 +446,7 @@ export default function Dashboard() {
                     onClick={handleTestAuth}
                     disabled={testLoading}
                   >
-                    Testar Requisição DRF (/api/auth/me/)
+                    Test GraphQL `me` Query
                   </Button>
                   <Typography variant="caption" color="text.secondary">
                     Header utilizado: <code>Authorization: Bearer {token.slice(0, 8)}...</code>
@@ -466,7 +466,7 @@ export default function Dashboard() {
                     }}
                   >
                     <Typography variant="caption" sx={{ color: "#94a3b8", display: "block", mb: 0.5 }}>
-                      Resposta recebida da API Django REST autenticada:
+                      Response received from the authenticated GraphQL API:
                     </Typography>
                     <pre style={{ margin: 0, overflowX: "auto" }}>
                       {JSON.stringify(testResult, null, 2)}
@@ -479,7 +479,7 @@ export default function Dashboard() {
                 <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ sm: "center" }} spacing={2}>
                   <Box>
                     <Typography variant="h6" fontWeight={700}>
-                      Autenticação Desacoplada (Frontend &rarr; Django DRF)
+                      Decoupled Authentication (Frontend &rarr; GraphQL)
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, maxWidth: 650 }}>
                       O login do Google ocorre 100% no Next.js (sem templates do Django). As credenciais são validadas pelo backend Django REST, que cria o usuário no MySQL e retorna tokens JWT.
