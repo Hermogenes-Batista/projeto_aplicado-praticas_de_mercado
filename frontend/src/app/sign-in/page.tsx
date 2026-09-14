@@ -21,17 +21,23 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import GoogleIcon from "@/components/GoogleIcon";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
 import NextLink from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 export default function SignIn() {
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [submitted, setSubmitted] = React.useState(false);
+  const router = useRouter();
+  const { loginWithCredentials, error, loading } = useAuth();
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setSubmitted(true);
+    const success = await loginWithCredentials(email, password);
+    setSubmitted(success);
+    if (success) {
+      router.push("/");
+    }
   };
 
   return (
@@ -84,9 +90,14 @@ export default function SignIn() {
             Acesse o sistema com suas credenciais
           </Typography>
 
+          {error && (
+            <Alert severity="error" sx={{ width: "100%", mb: 2 }}>
+              {error}
+            </Alert>
+          )}
           {submitted && (
-            <Alert severity="info" sx={{ width: "100%", mb: 2 }}>
-              Formulário enviado para: <strong>{email}</strong>
+            <Alert severity="success" sx={{ width: "100%", mb: 2 }}>
+              Login realizado com sucesso.
             </Alert>
           )}
 
@@ -134,6 +145,7 @@ export default function SignIn() {
               fullWidth
               variant="contained"
               size="large"
+              disabled={loading}
               sx={{ mt: 2, mb: 2, py: 1.2 }}
             >
               Entrar

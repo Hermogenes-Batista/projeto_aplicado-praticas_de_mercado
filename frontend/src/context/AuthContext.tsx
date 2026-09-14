@@ -9,6 +9,7 @@ import React, {
   useState,
 } from "react";
 import {useRouter} from "next/navigation";
+import { print, type DocumentNode } from "graphql";
 import {
   Button,
   Dialog,
@@ -17,6 +18,16 @@ import {
   DialogContentText,
   DialogTitle,
 } from "@mui/material";
+import {
+  CurrentUserDocument,
+  LoginDocument,
+  LogoutDocument,
+  type CurrentUserQuery,
+  type LoginMutation,
+  type LoginMutationVariables,
+  type LogoutMutation,
+  type LogoutMutationVariables,
+} from "@/graphql/generated";
 
 export interface User {
   id: string;
@@ -34,6 +45,7 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   clientId: string;
+  loginWithCredentials: (username: string, password: string) => Promise<boolean>;
   loginWithGoogleCredential: (credential: string) => Promise<boolean>;
   loginWithGoogleCode: (code: string, redirectUri?: string) => Promise<boolean>;
   loginDemoUser: (email?: string, name?: string) => Promise<boolean>;
@@ -44,8 +56,14 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const GRAPHQL_URL = `${API_URL}/graphql/`;
 const INACTIVITY_WARNING_MS = 5 * 60 * 1000;
 const INACTIVITY_LOGOUT_MS = 10 * 60 * 1000;
+
+interface GraphQLResponse<T> {
+  data?: T;
+  errors?: Array<{ message: string }>;
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -60,6 +78,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [inactivityResetKey, setInactivityResetKey] = useState(0);
   const inactivityWarningRef = useRef(false);
   const router = useRouter();
+
+  const requestGraphQL = useCallback(
+    async <T,>(
+      query: string | DocumentNode,
+      variables?: Record<string, unknown>,
+      accessToken?: string,
+    ): Promise<T> => {
+      const response = await fetch(GRAPHQL_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify({
+          query: typeof query === "string" ? query : print(query),
+          variables,
+        }),
+      });
+
+      const result: GraphQLResponse<T> = await response.json();
+      if (!response.ok || result.errors?.length || !result.data) {
+        throw new Error(
+          result.errors?.map((error) => error.message).join(", ") ||
+            "GraphQL request failed.",
+        );
+      }
+      return result.data;
+    },
+    [],
+  );
+
+  const normalizeUser = (userData: Record<string, unknown>): User => ({
+    id: String(userData.id),
+    username: String(userData.username || ""),
+    email: String(userData.email || ""),
+    first_name: String(userData.firstName || userData.first_name || ""),
+    last_name: String(userData.lastName || userData.last_name || ""),
+    is_staff: Boolean(userData.isStaff ?? userData.is_staff),
+    picture: typeof userData.picture === "string" ? userData.picture : undefined,
+  });
+
+  const getCurrentUser = useCallback(
+    async (accessToken: string): Promise<User> => {
+      const data = await requestGraphQL<CurrentUserQuery>(
+        CurrentUserDocument,
+        undefined,
+        accessToken,
+      );
+
+      if (!data.me) {
+        throw new Error("Authenticated user was not found.");
+      }
+      return normalizeUser(data.me as Record<string, unknown>);
+    },
+    [requestGraphQL],
+  );
 
   const refreshAccessToken = useCallback(async (storedRefreshToken: string) => {
     try {
@@ -114,35 +188,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
       }
 
-      // Validate the token with the backend
-      fetch(`${API_URL}/api/auth/me/`, {
-        headers: {
-          Authorization: `Bearer ${savedToken}`,
-        },
-      })
-        .then(async (res) => {
-          if (res.ok) {
-            return res.json();
-          }
-          if (res.status === 401) {
+      // Validate the token with the backend through GraphQL
+      (async () => {
+        try {
+          let currentUser: User;
+          try {
+            currentUser = await getCurrentUser(savedToken);
+          } catch {
             const newAccessToken = await refreshAccessToken(savedRefreshToken);
-            if (newAccessToken) {
-              const refreshedRes = await fetch(`${API_URL}/api/auth/me/`, {
-                headers: { Authorization: `Bearer ${newAccessToken}` },
-              });
-              if (refreshedRes.ok) {
-                return refreshedRes.json();
-              }
+            if (!newAccessToken) {
+              throw new Error("Session refresh failed.");
             }
+            currentUser = await getCurrentUser(newAccessToken);
           }
-          throw new Error("Sessão inválida ou expirada.");
-        })
-        .then((userData) => {
-          if (userData) {
-            setUser((prev) => ({ ...prev, ...userData }));
-          }
-        })
-        .catch(() => {
+          setUser(currentUser);
+        } catch {
           setToken(null);
           setRefreshToken(null);
           setUser(null);
@@ -150,13 +210,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           localStorage.removeItem("drf_refresh_token");
           localStorage.removeItem("drf_user");
           router.push("/sign-in");
-        })
-        .finally(() => setLoading(false));
+        } finally {
+          setLoading(false);
+        }
+      })();
     } else {
       setLoading(false);
       router.push("/sign-in")
     }
-  }, [refreshAccessToken, router]);
+  }, [getCurrentUser, refreshAccessToken, router]);
 
   const handleAuthSuccess = (
     accessToken: string,
@@ -170,6 +232,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("drf_token", accessToken);
     localStorage.setItem("drf_refresh_token", newRefreshToken);
     localStorage.setItem("drf_user", JSON.stringify(userData));
+  };
+
+  const loginWithCredentials = async (
+    username: string,
+    password: string,
+  ): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const variables: LoginMutationVariables = { username, password };
+      const data = await requestGraphQL<LoginMutation>(
+        LoginDocument,
+        variables,
+      );
+
+      const login = data.login;
+      if (!login || !login.success || !login.access || !login.refresh || !login.user) {
+        throw new Error(login?.errors.join(", ") || "Authentication failed.");
+      }
+
+      handleAuthSuccess(
+        login.access,
+        login.refresh,
+        normalizeUser(login.user as Record<string, unknown>),
+      );
+      return true;
+    } catch (err: any) {
+      setError(err.message || "Authentication error.");
+      return false;
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Login through a Google ID Token / Credential (Google Identity Services)
@@ -261,11 +355,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async () => {
     if (refreshToken) {
       try {
-        await fetch(`${API_URL}/api/auth/logout/`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ refresh: refreshToken }),
-        });
+        const variables: LogoutMutationVariables = { refresh: refreshToken };
+        await requestGraphQL<LogoutMutation>(LogoutDocument, variables);
       } catch (e) {
         // Ignore network errors during logout
       }
@@ -277,7 +368,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("drf_refresh_token");
     localStorage.removeItem("drf_user");
     router.push("/sign-in")
-  }, [refreshToken, router]);
+  }, [requestGraphQL, refreshToken, router]);
 
   // End the session after 120 seconds without interaction while the user is logged in.
   useEffect(() => {
@@ -349,26 +440,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!token) {
       throw new Error("Usuário não autenticado");
     }
-    let accessToken = token;
-    let res = await fetch(`${API_URL}/api/auth/me/`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-    if (res.status === 401 && refreshToken) {
+
+    try {
+      return await getCurrentUser(token);
+    } catch {
+      if (!refreshToken) {
+        await logout();
+        throw new Error("Authentication failed.");
+      }
+
       const newAccessToken = await refreshAccessToken(refreshToken);
-      if (newAccessToken) {
-        accessToken = newAccessToken;
-        res = await fetch(`${API_URL}/api/auth/me/`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
+      if (!newAccessToken) {
+        await logout();
+        throw new Error("Authentication failed.");
+      }
+
+      try {
+        return await getCurrentUser(newAccessToken);
+      } catch {
+        await logout();
+        throw new Error("Authentication failed.");
       }
     }
-    if (!res.ok) {
-      await logout();
-      throw new Error(`Erro ${res.status}: ${res.statusText}`);
-    }
-    return await res.json();
   };
 
   return (
@@ -379,6 +472,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loading,
         error,
         clientId,
+        loginWithCredentials,
         loginWithGoogleCredential,
         loginWithGoogleCode,
         loginDemoUser,

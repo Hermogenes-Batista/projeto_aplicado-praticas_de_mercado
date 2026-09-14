@@ -52,6 +52,9 @@ INSTALLED_APPS = [
     # CORS Headers
     'corsheaders',
 
+    # GraphQL
+    'graphene_django',
+
     # Django REST Framework & JWT Authentication
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
