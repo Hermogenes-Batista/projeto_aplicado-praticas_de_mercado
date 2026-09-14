@@ -94,7 +94,7 @@ class GoogleAuthAPIView(APIView):
                 if token_res.status_code == 200:
                     token_data = token_res.json()
                     access_token = token_data.get("access_token")
-                    
+
                     # Obter dados do usuário via userinfo endpoint
                     userinfo_res = requests.get(
                         "https://www.googleapis.com/oauth2/v3/userinfo",
@@ -127,25 +127,6 @@ class GoogleAuthAPIView(APIView):
                     {"error": f"Erro no intercâmbio de código OAuth: {str(e)}"},
                     status=status.HTTP_502_BAD_GATEWAY
                 )
-
-        # 3. Modo de Demonstração / Teste (útil em desenvolvimento caso o cliente ainda não tenha configurado origens no Google Cloud)
-        elif data.get('demo') is True and settings.DEBUG:
-            email = data.get('email', 'dev.usuario@gmail.com')
-            user_info = {
-                "email": email,
-                "sub": "demo_google_123456",
-                "name": data.get('name', 'Usuário Demonstração Google'),
-                "given_name": data.get('given_name', 'Usuário'),
-                "family_name": data.get('family_name', 'Demonstração'),
-                "picture": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
-                "email_verified": True,
-            }
-
-        else:
-            return Response(
-                {"error": "Nenhum token ou código de autenticação do Google foi fornecido."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
 
         if not user_info or not user_info.get("email"):
             return Response(
@@ -231,8 +212,6 @@ class UserMeAPIView(APIView):
             "email": user.email,
             "first_name": user.first_name,
             "last_name": user.last_name,
-            "is_staff": user.is_staff,
-            "is_superuser": user.is_superuser,
             "date_joined": user.date_joined,
         })
 
