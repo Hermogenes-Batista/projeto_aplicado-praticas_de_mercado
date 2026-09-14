@@ -1,12 +1,9 @@
-import graphene
-from graphene_django import DjangoObjectType
+from rest_framework import serializers
 
-from .models import User
+from ..models import User
 
 
-class UserType(DjangoObjectType):
-    id = graphene.UUID(required=True)
-
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = (
@@ -17,3 +14,4 @@ class UserType(DjangoObjectType):
             "last_name",
             "is_staff",
         )
+        read_only_fields = fields

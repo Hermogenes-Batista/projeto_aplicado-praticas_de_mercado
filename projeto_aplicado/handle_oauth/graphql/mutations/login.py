@@ -1,19 +1,12 @@
 import graphene
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .serializers import LoginSerializer, LogoutSerializer
-from .types import UserType
+from ...serializers import LoginSerializer
+from ..types import UserType
+from .helpers import serializer_errors
 
 
-def serializer_errors(serializer):
-    return [
-        f"{field}: {message}"
-        for field, messages in serializer.errors.items()
-        for message in messages
-    ]
-
-
-class Login(graphene.Mutation):
+class LoginMutation(graphene.Mutation):
     class Arguments:
         username = graphene.String(required=True)
         password = graphene.String(required=True)
@@ -42,25 +35,3 @@ class Login(graphene.Mutation):
             refresh=str(refresh),
             user=user,
         )
-
-
-class Logout(graphene.Mutation):
-    class Arguments:
-        refresh = graphene.String(required=True)
-
-    success = graphene.Boolean(required=True)
-    errors = graphene.List(graphene.String, required=True)
-
-    @classmethod
-    def mutate(cls, root, info, refresh):
-        serializer = LogoutSerializer(data={"refresh": refresh})
-        if not serializer.is_valid():
-            return cls(success=False, errors=serializer_errors(serializer))
-
-        serializer.save()
-        return cls(success=True, errors=[])
-
-
-class Mutation(graphene.ObjectType):
-    login = Login.Field()
-    logout = Logout.Field()

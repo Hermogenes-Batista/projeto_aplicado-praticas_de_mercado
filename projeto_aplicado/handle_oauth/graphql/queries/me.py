@@ -1,11 +1,11 @@
 import graphene
 from graphql import GraphQLError
 
-from .graphql_utils import get_authenticated_user
-from .types import UserType
+from ..types import UserType
+from ..utils import get_authenticated_user
 
 
-class Query(graphene.ObjectType):
+class MeQuery(graphene.ObjectType):
     me = graphene.Field(UserType)
 
     def resolve_me(self, info):
