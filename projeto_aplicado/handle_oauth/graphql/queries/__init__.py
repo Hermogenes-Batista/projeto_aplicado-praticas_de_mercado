@@ -1,3 +1,11 @@
+import graphene
+
+from .config import GoogleConfigQuery
 from .me import MeQuery
 
-__all__ = ["MeQuery"]
+
+class AuthQuery(MeQuery, GoogleConfigQuery, graphene.ObjectType):
+    pass
+
+
+__all__ = ["AuthQuery"]

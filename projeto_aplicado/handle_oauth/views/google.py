@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from ..cookies import set_auth_cookies
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
@@ -36,7 +37,7 @@ class GoogleAuthAPIView(APIView):
         user = self._get_or_create_user(user_info)
         self._link_social_account(user, user_info)
         refresh = RefreshToken.for_user(user)
-        return Response(
+        response = Response(
             {
                 "access": str(refresh.access_token),
                 "refresh": str(refresh),
@@ -52,6 +53,8 @@ class GoogleAuthAPIView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+        set_auth_cookies(response, str(refresh.access_token), str(refresh))
+        return response
 
     def _get_user_info(self, id_token, code, redirect_uri):
         if id_token:

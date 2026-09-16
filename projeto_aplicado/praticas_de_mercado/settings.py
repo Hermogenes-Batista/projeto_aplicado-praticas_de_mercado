@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import os
 from datetime import timedelta
 from pathlib import Path
+from django.core.management.utils import get_random_secret_key
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -24,17 +25,22 @@ load_dotenv(BASE_DIR.parent / ".env")
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get(
     "DJANGO_SECRET_KEY",
-    "django-insecure-default-dev-secret-key",
+    get_random_secret_key(),
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DEBUG", "True").lower() in ("true", "1", "yes")
+DEBUG = os.environ.get("DEBUG", "False").lower() in ("true", "1", "yes")
 
 allowed_hosts_env = os.environ.get("DJANGO_ALLOWED_HOSTS")
 if allowed_hosts_env:
     ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_env.split(",") if h.strip()]
 else:
-    ALLOWED_HOSTS = ["*"]
+    ALLOWED_HOSTS = [
+        "localhost",
+        "127.0.0.1",
+        "backend",
+        "0.0.0.0",
+    ]
 
 
 # Application definition
@@ -69,6 +75,7 @@ INSTALLED_APPS = [
 
     # Custom Apps
     'handle_oauth',
+    'todo_app',
 ]
 
 AUTH_USER_MODEL = 'handle_oauth.User'
@@ -212,7 +219,8 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
 # CORS Configuration
-CORS_ALLOW_ALL_ORIGINS = os.environ.get("CORS_ALLOW_ALL_ORIGINS", "True").lower() in ("true", "1", "yes")
+CORS_ALLOW_ALL_ORIGINS = os.environ.get("CORS_ALLOW_ALL_ORIGINS", "False").lower() in ("true", "1", "yes")
+CORS_ALLOW_CREDENTIALS = True
 cors_origins_env = os.environ.get("CORS_ALLOWED_ORIGINS", "")
 if cors_origins_env:
     CORS_ALLOWED_ORIGINS = [o.strip() for o in cors_origins_env.split(",") if o.strip()]

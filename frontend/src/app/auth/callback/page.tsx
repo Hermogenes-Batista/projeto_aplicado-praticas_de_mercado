@@ -65,10 +65,10 @@ function CallbackHandler() {
         <Stack spacing={3} alignItems="center">
           <CircularProgress size={48} />
           <Typography variant="h6" fontWeight={600}>
-            Processando autenticação com o Google...
+            Processando a autenticação com o Google...
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Validando credenciais com o backend Django e gerando tokens JWT.
+            Validando as credenciais com o backend Django e gerando tokens JWT.
           </Typography>
         </Stack>
       )}
