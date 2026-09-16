@@ -32,37 +32,37 @@ import NextLink from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import {
-  CreateTodoCategoryDocument,
-  CreateTodoCategoryMutation,
+  CreateTodoActivityDocument,
+  CreateTodoActivityMutation,
   CompleteTodoActivityDocument,
   CompleteTodoActivityMutation,
   CreateTodoItemDocument,
   CreateTodoItemMutation,
   DeleteTodoItemDocument,
   DeleteTodoItemMutation,
-  TodoCategoriesDocument,
-  TodoCategoriesQuery,
+  TodoActivitiesDocument,
+  TodoActivitiesQuery,
   TodoItemsDocument,
   TodoItemsQuery,
-  UpdateTodoCategoryDocument,
-  UpdateTodoCategoryMutation,
+  UpdateTodoActivityDocument,
+  UpdateTodoActivityMutation,
   UpdateTodoItemDocument,
   UpdateTodoItemMutation,
 } from "@/graphql/generated";
 
-type Category = NonNullable<TodoCategoriesQuery["categories"][number]>;
+type Activity = NonNullable<TodoActivitiesQuery["activities"][number]>;
 type TodoItem = NonNullable<TodoItemsQuery["items"][number]>;
 
 export default function ActivityTodosPage() {
   const params = useParams<{ activityId: string }>();
   const router = useRouter();
   const { requestAuthenticatedGraphQL } = useAuth();
-  const categoryId = params.activityId;
-  const isNewCategory = categoryId === "new";
-  const [category, setCategory] = useState<Category | null>(null);
+  const activityId = params.activityId;
+  const isNewActivity = activityId === "new";
+  const [activity, setActivity] = useState<Activity | null>(null);
   const [items, setItems] = useState<TodoItem[]>([]);
-  const [categoryName, setCategoryName] = useState("");
-  const [editingCategoryName, setEditingCategoryName] = useState(false);
+  const [activityName, setActivityName] = useState("");
+  const [editingActivityName, setEditingActivityName] = useState(false);
   const [newItemName, setNewItemName] = useState("");
   const [pendingItems, setPendingItems] = useState<string[]>([]);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
@@ -75,35 +75,35 @@ export default function ActivityTodosPage() {
   const errorsFrom = (errors: Array<string | null> | undefined) =>
     errors?.filter((message): message is string => Boolean(message)).join(", ");
 
-  const loadCategory = useCallback(async () => {
-    if (isNewCategory) {
+  const loadActivity = useCallback(async () => {
+    if (isNewActivity) {
       setLoading(false);
-      setEditingCategoryName(true);
+      setEditingActivityName(true);
       return;
     }
     setLoading(true);
     setError(null);
     try {
-      const [categoriesData, itemsData] = await Promise.all([
-        requestAuthenticatedGraphQL<TodoCategoriesQuery>(
-          TodoCategoriesDocument,
+      const [activitiesData, itemsData] = await Promise.all([
+        requestAuthenticatedGraphQL<TodoActivitiesQuery>(
+          TodoActivitiesDocument,
         ),
         requestAuthenticatedGraphQL<TodoItemsQuery>(TodoItemsDocument, {
           isResolved: null,
         }),
       ]);
-      const selectedCategory = categoriesData.categories.find(
-        (item): item is Category => item?.id === categoryId,
+      const selectedActivity = activitiesData.activities.find(
+        (item): item is Activity => item?.id === activityId,
       );
-      if (!selectedCategory) {
+      if (!selectedActivity) {
         throw new Error("Atividade não encontrada.");
       }
-      setCategory(selectedCategory);
-      setCategoryName(selectedCategory.name);
+      setActivity(selectedActivity);
+      setActivityName(selectedActivity.name);
       setItems(
         itemsData.items.filter(
           (item): item is TodoItem =>
-            item?.category?.id === selectedCategory.id,
+            item?.activity?.id === selectedActivity.id,
         ),
       );
     } catch (cause) {
@@ -111,27 +111,27 @@ export default function ActivityTodosPage() {
     } finally {
       setLoading(false);
     }
-  }, [categoryId, isNewCategory, requestAuthenticatedGraphQL]);
+  }, [activityId, isNewActivity, requestAuthenticatedGraphQL]);
 
   useEffect(() => {
-    void loadCategory();
-  }, [loadCategory]);
+    void loadActivity();
+  }, [loadActivity]);
 
-  const saveCategory = async () => {
-    if (!categoryName.trim() || (!category && !isNewCategory)) return;
+  const saveActivity = async () => {
+    if (!activityName.trim() || (!activity && !isNewActivity)) return;
     setSaving(true);
     setError(null);
     try {
-      if (isNewCategory) {
-        const categoryData =
-          await requestAuthenticatedGraphQL<CreateTodoCategoryMutation>(
-            CreateTodoCategoryDocument,
-            { name: categoryName.trim() },
+      if (isNewActivity) {
+        const activityData =
+          await requestAuthenticatedGraphQL<CreateTodoActivityMutation>(
+            CreateTodoActivityDocument,
+            { name: activityName.trim() },
           );
-        const categoryErrors = errorsFrom(categoryData.createCategory?.errors);
-        const createdCategory = categoryData.createCategory?.category;
-        if (categoryErrors || !createdCategory) {
-          throw new Error(categoryErrors || "Falha ao criar a atividade.");
+        const activityErrors = errorsFrom(activityData.createActivity?.errors);
+        const createdActivity = activityData.createActivity?.activity;
+        if (activityErrors || !createdActivity) {
+          throw new Error(activityErrors || "Falha ao criar a atividade.");
         }
 
         for (const itemName of pendingItems) {
@@ -140,7 +140,7 @@ export default function ActivityTodosPage() {
               CreateTodoItemDocument,
               {
                 name: itemName,
-                categoryId: createdCategory.id,
+                activityId: createdActivity.id,
                 isResolved: false,
               },
             );
@@ -150,19 +150,19 @@ export default function ActivityTodosPage() {
           }
         }
 
-        router.push(`/todos/categories/${createdCategory.id}`);
+        router.push(`/todos/activities/${createdActivity.id}`);
         return;
       }
 
       const data =
-        await requestAuthenticatedGraphQL<UpdateTodoCategoryMutation>(
-          UpdateTodoCategoryDocument,
-          { id: category!.id, name: categoryName.trim() },
+        await requestAuthenticatedGraphQL<UpdateTodoActivityMutation>(
+          UpdateTodoActivityDocument,
+          { id: activity!.id, name: activityName.trim() },
         );
-      const errors = errorsFrom(data.updateCategory?.errors);
+      const errors = errorsFrom(data.updateActivity?.errors);
       if (errors) throw new Error(errors);
-      setEditingCategoryName(false);
-      await loadCategory();
+      setEditingActivityName(false);
+      await loadActivity();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Falha ao salvar a atividade.");
     } finally {
@@ -172,12 +172,12 @@ export default function ActivityTodosPage() {
 
   const addItem = async () => {
     if (!newItemName.trim()) return;
-    if (isNewCategory) {
+    if (isNewActivity) {
       setPendingItems((currentItems) => [...currentItems, newItemName.trim()]);
       setNewItemName("");
       return;
     }
-    if (!category) return;
+    if (!activity) return;
     setSaving(true);
     setError(null);
     try {
@@ -185,14 +185,14 @@ export default function ActivityTodosPage() {
         CreateTodoItemDocument,
         {
           name: newItemName.trim(),
-          categoryId: category.id,
+          activityId: activity.id,
           isResolved: false,
         },
       );
       const errors = errorsFrom(data.createItem?.errors);
       if (errors) throw new Error(errors);
       setNewItemName("");
-      await loadCategory();
+      await loadActivity();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Falha ao adicionar o item.");
     } finally {
@@ -217,7 +217,7 @@ export default function ActivityTodosPage() {
         {
           id: item.id,
           name: item.name,
-          categoryId: categoryId,
+          activityId: activityId,
           isResolved: nextResolved,
         },
       );
@@ -238,18 +238,18 @@ export default function ActivityTodosPage() {
   };
 
   const toggleActivityResolved = async () => {
-    if (!category) return;
+    if (!activity) return;
     setSaving(true);
     setError(null);
     try {
       const data =
         await requestAuthenticatedGraphQL<CompleteTodoActivityMutation>(
           CompleteTodoActivityDocument,
-          { id: category.id, isResolved: !category.isResolved },
+          { id: activity.id, isResolved: !activity.isResolved },
         );
       const errors = errorsFrom(data.completeActivity?.errors);
       if (errors) throw new Error(errors);
-      await loadCategory();
+      await loadActivity();
     } catch (cause) {
       setError(
         cause instanceof Error
@@ -271,14 +271,14 @@ export default function ActivityTodosPage() {
         {
           id: item.id,
           name: editingItemName.trim(),
-          categoryId,
+          activityId,
           isResolved: item.isResolved,
         },
       );
       const errors = errorsFrom(data.updateItem?.errors);
       if (errors) throw new Error(errors);
       setEditingItemId(null);
-      await loadCategory();
+      await loadActivity();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Falha ao editar o item.");
     } finally {
@@ -298,7 +298,7 @@ export default function ActivityTodosPage() {
       if (!data.deleteItem?.success || errors) {
         throw new Error(errors || "Falha ao excluir o item.");
       }
-      await loadCategory();
+      await loadActivity();
       setDeleteItemId(null);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Falha ao excluir o item.");
@@ -337,29 +337,29 @@ export default function ActivityTodosPage() {
         </Alert>
       )}
 
-      {category || isNewCategory ? (
+      {activity || isNewActivity ? (
         <Stack spacing={3}>
           <Card>
             <CardContent>
               <Typography variant="overline" color="text.secondary">
-                {isNewCategory ? "Nova atividade" : "Atividade"}
+                {isNewActivity ? "Nova atividade" : "Atividade"}
               </Typography>
-              {isNewCategory || editingCategoryName ? (
+              {isNewActivity || editingActivityName ? (
                 <Stack
                   direction={{ xs: "column", sm: "row" }}
                   spacing={2}
                   sx={{ mt: 1 }}
                 >
                   <TextField
-                    value={categoryName}
-                    onChange={(event) => setCategoryName(event.target.value)}
+                    value={activityName}
+                    onChange={(event) => setActivityName(event.target.value)}
                     onKeyDown={(event) => {
-                      if (event.key === "Enter" && !isNewCategory) {
-                        void saveCategory();
+                      if (event.key === "Enter" && !isNewActivity) {
+                        void saveActivity();
                       }
-                      if (event.key === "Escape" && !isNewCategory) {
-                        setCategoryName(category!.name);
-                        setEditingCategoryName(false);
+                      if (event.key === "Escape" && !isNewActivity) {
+                        setActivityName(activity!.name);
+                        setEditingActivityName(false);
                       }
                     }}
                     fullWidth
@@ -370,16 +370,16 @@ export default function ActivityTodosPage() {
                     <Button
                       variant="contained"
                       startIcon={<SaveIcon />}
-                      onClick={() => void saveCategory()}
+                      onClick={() => void saveActivity()}
                       disabled={saving}
                     >
                       Salvar
                     </Button>
-                    {!isNewCategory && (
+                    {!isNewActivity && (
                       <Button
                         onClick={() => {
-                          setCategoryName(category!.name);
-                          setEditingCategoryName(false);
+                          setActivityName(activity!.name);
+                          setEditingActivityName(false);
                         }}
                         disabled={saving}
                       >
@@ -391,13 +391,13 @@ export default function ActivityTodosPage() {
               ) : (
                 <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 1 }}>
                   <Typography variant="h5" fontWeight={700}>
-                    {category!.name}
+                    {activity!.name}
                   </Typography>
                   <IconButton
                     aria-label="Editar nome da atividade"
                     onClick={() => {
-                      setCategoryName(category!.name);
-                      setEditingCategoryName(true);
+                      setActivityName(activity!.name);
+                      setEditingActivityName(true);
                     }}
                     disabled={saving}
                   >
@@ -405,9 +405,9 @@ export default function ActivityTodosPage() {
                   </IconButton>
                   <Button
                     size="small"
-                    color={category!.isResolved ? "success" : "primary"}
+                    color={activity!.isResolved ? "success" : "primary"}
                     startIcon={
-                      category!.isResolved ? (
+                      activity!.isResolved ? (
                         <CheckCircleIcon />
                       ) : (
                         <RadioButtonUncheckedIcon />
@@ -416,7 +416,7 @@ export default function ActivityTodosPage() {
                     onClick={() => void toggleActivityResolved()}
                     disabled={saving || !items.length}
                   >
-                    {category!.isResolved ? "Concluída" : "Concluir atividade"}
+                    {activity!.isResolved ? "Concluída" : "Concluir atividade"}
                   </Button>
                 </Stack>
               )}

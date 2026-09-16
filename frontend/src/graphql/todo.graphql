@@ -5,15 +5,15 @@ query TodoItems($isResolved: Boolean) {
     createdAt
     updatedAt
     isResolved
-    category: activity {
+    activity {
       id
       name
     }
   }
 }
 
-query TodoCategories {
-  categories: activities {
+query TodoActivities {
+  activities {
     id
     name
     createdAt
@@ -22,9 +22,9 @@ query TodoCategories {
   }
 }
 
-mutation CreateTodoCategory($name: String!) {
-  createCategory: createActivity(name: $name) {
-    category: activity {
+mutation CreateTodoActivity($name: String!) {
+  createActivity(name: $name) {
+    activity {
       id
       name
       createdAt
@@ -35,9 +35,9 @@ mutation CreateTodoCategory($name: String!) {
   }
 }
 
-mutation UpdateTodoCategory($id: UUID!, $name: String!) {
-  updateCategory: updateActivity(id: $id, name: $name) {
-    category: activity {
+mutation UpdateTodoActivity($id: UUID!, $name: String!) {
+  updateActivity(id: $id, name: $name) {
+    activity {
       id
       name
       createdAt
@@ -48,8 +48,8 @@ mutation UpdateTodoCategory($id: UUID!, $name: String!) {
   }
 }
 
-mutation DeleteTodoCategory($id: UUID!) {
-  deleteCategory: deleteActivity(id: $id) {
+mutation DeleteTodoActivity($id: UUID!) {
+  deleteActivity(id: $id) {
     success
     errors
   }
@@ -70,12 +70,12 @@ mutation CompleteTodoActivity($id: UUID!, $isResolved: Boolean!) {
 
 mutation CreateTodoItem(
   $name: String!
-  $categoryId: UUID!
+  $activityId: UUID!
   $isResolved: Boolean
 ) {
   createItem(
     name: $name
-    activityId: $categoryId
+    activityId: $activityId
     isResolved: $isResolved
   ) {
     item {
@@ -84,7 +84,7 @@ mutation CreateTodoItem(
       createdAt
       updatedAt
       isResolved
-      category: activity {
+      activity {
         id
         name
       }
@@ -96,13 +96,13 @@ mutation CreateTodoItem(
 mutation UpdateTodoItem(
   $id: UUID!
   $name: String!
-  $categoryId: UUID!
+  $activityId: UUID!
   $isResolved: Boolean!
 ) {
   updateItem(
     id: $id
     name: $name
-    activityId: $categoryId
+    activityId: $activityId
     isResolved: $isResolved
   ) {
     item {
@@ -111,7 +111,7 @@ mutation UpdateTodoItem(
       createdAt
       updatedAt
       isResolved
-      category: activity {
+      activity {
         id
         name
       }
