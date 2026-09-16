@@ -23,6 +23,7 @@ import GoogleSignInButton from "@/components/GoogleSignInButton";
 import NextLink from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import ThemeSelector from "@/components/ThemeSelector";
 
 export default function SignIn() {
   const [email, setEmail] = React.useState("");
@@ -44,14 +45,19 @@ export default function SignIn() {
     <Box
       sx={{
         minHeight: "100vh",
+        position: "relative",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%)",
+        background: (theme) =>
+          `linear-gradient(180deg, ${theme.palette.background.default} 0%, ${theme.palette.action.hover} 100%)`,
         py: 4,
         px: 2,
       }}
     >
+      <Box sx={{ position: "absolute", top: 16, right: 16 }}>
+        <ThemeSelector />
+      </Box>
       <Container component="main" maxWidth="xs">
         <Paper
           elevation={4}
@@ -61,18 +67,18 @@ export default function SignIn() {
             flexDirection: "column",
             alignItems: "center",
             borderRadius: 3,
-            backgroundColor: "#ffffff",
+            backgroundColor: "background.paper",
           }}
         >
           <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
             <Chip
-              label="MUI Free Template"
+              label="Modelo MUI"
               color="primary"
               size="small"
               sx={{ fontWeight: 600 }}
             />
             <Chip
-              label="Sign-in"
+              label="Entrar"
               variant="outlined"
               size="small"
               sx={{ fontWeight: 600 }}
@@ -165,27 +171,6 @@ export default function SignIn() {
             </Grid>
 
             <Divider sx={{ my: 2.5 }} />
-
-            <Stack spacing={1} alignItems="center">
-              <Button
-                component={NextLink}
-                href="/sign-in-side"
-                variant="text"
-                size="small"
-              >
-                Alternar para Sign-in Side
-              </Button>
-              <Button
-                component={NextLink}
-                href="/"
-                startIcon={<DashboardIcon />}
-                variant="outlined"
-                size="small"
-                fullWidth
-              >
-                Ir para o Painel (Dashboard)
-              </Button>
-            </Stack>
           </Box>
         </Paper>
       </Container>

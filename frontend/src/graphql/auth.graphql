@@ -9,7 +9,7 @@ query CurrentUser {
   }
 }
 
-mutation Login($username: String!, $password: String!) {
+mutation AuthenticateUser($username: String!, $password: String!) {
   login(username: $username, password: $password) {
     success
     errors
@@ -26,9 +26,53 @@ mutation Login($username: String!, $password: String!) {
   }
 }
 
-mutation Logout($refresh: String!) {
-  logout(refresh: $refresh) {
+mutation EndSession {
+  logout {
     success
     errors
+  }
+}
+
+mutation RefreshSession {
+  refreshToken {
+    success
+    errors
+    access
+    refresh
+  }
+}
+
+query GoogleConfig {
+  googleClientId
+}
+
+mutation AuthenticateGoogle(
+  $credential: String
+  $code: String
+  $redirectUri: String
+  $demo: Boolean
+  $email: String
+  $name: String
+) {
+  loginWithGoogle(
+    credential: $credential
+    code: $code
+    redirectUri: $redirectUri
+    demo: $demo
+    email: $email
+    name: $name
+  ) {
+    success
+    errors
+    access
+    refresh
+    user {
+      id
+      username
+      email
+      firstName
+      lastName
+      isStaff
+    }
   }
 }

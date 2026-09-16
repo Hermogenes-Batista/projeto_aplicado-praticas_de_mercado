@@ -2,141 +2,148 @@
 
 import * as React from "react";
 import {
-  Box,
-  Drawer,
+  Alert,
   AppBar,
-  Toolbar,
-  List,
-  Typography,
-  Divider,
-  IconButton,
-  Container,
-  Grid,
-  Paper,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Badge,
+  Avatar,
+  Box,
   Button,
-  Chip,
   Card,
   CardContent,
   CardHeader,
   CircularProgress,
+  Container,
+  Divider,
+  Drawer,
+  Grid,
+  IconButton,
+  LinearProgress,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Alert,
-  Avatar,
-  Tooltip,
-  Snackbar,
+  Toolbar,
+  Typography,
 } from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu";
+import ChecklistIcon from "@mui/icons-material/Checklist";
 import DashboardIcon from "@mui/icons-material/Dashboard";
-import StorageIcon from "@mui/icons-material/Storage";
-import VpnKeyIcon from "@mui/icons-material/VpnKey";
-import NotificationsIcon from "@mui/icons-material/Notifications";
-import RefreshIcon from "@mui/icons-material/Refresh";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import ErrorIcon from "@mui/icons-material/Error";
-import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import LoginIcon from "@mui/icons-material/Login";
 import LogoutIcon from "@mui/icons-material/Logout";
-import WebIcon from "@mui/icons-material/Web";
-import DnsIcon from "@mui/icons-material/Dns";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import KeyIcon from "@mui/icons-material/Key";
-import ScienceIcon from "@mui/icons-material/Science";
-import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import MenuIcon from "@mui/icons-material/Menu";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import VpnKeyIcon from "@mui/icons-material/VpnKey";
 import NextLink from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import {useRouter} from "next/navigation";
+import ThemeSelector from "@/components/ThemeSelector";
+import {
+  TodoCategoriesDocument,
+  TodoCategoriesQuery,
+  TodoItemsDocument,
+  TodoItemsQuery,
+} from "@/graphql/generated";
 
 const drawerWidth = 240;
 
-interface HealthData {
-  status: string;
-  service: string;
-  database: {
-    status: string;
-    vendor: string;
-    error?: string;
-  };
-}
+type TodoItem = NonNullable<TodoItemsQuery["items"][number]>;
+type TodoCategory = NonNullable<TodoCategoriesQuery["categories"][number]>;
 
 export default function Dashboard() {
   const [mobileOpen, setMobileOpen] = React.useState(false);
-  const [health, setHealth] = React.useState<HealthData | null>(null);
-  const [loading, setLoading] = React.useState<boolean>(true);
+  const [items, setItems] = React.useState<TodoItem[]>([]);
+  const [categories, setCategories] = React.useState<TodoCategory[]>([]);
+  const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [testResult, setTestResult] = React.useState<any | null>(null);
-  const [testLoading, setTestLoading] = React.useState<boolean>(false);
-  const [copied, setCopied] = React.useState(false);
-  const router = useRouter();
+  const {
+    user,
+    token,
+    loading: authLoading,
+    logout,
+    requestAuthenticatedGraphQL,
+  } = useAuth();
 
-  const { user, token, logout, loginDemoUser, testAuthenticatedRequest } = useAuth();
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const fetchTodoMetrics = React.useCallback(async () => {
+    if (!token) {
+      setItems([]);
+      setCategories([]);
+      return;
+    }
 
-  const fetchHealth = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${apiUrl}/api/health/`);
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-      }
-      const data: HealthData = await res.json();
-      setHealth(data);
-    } catch (err: any) {
-      setError(err.message || "Falha ao conectar com o Django Backend");
-      setHealth(null);
+      const [itemsData, categoriesData] = await Promise.all([
+        requestAuthenticatedGraphQL<TodoItemsQuery>(TodoItemsDocument, {
+          isResolved: null,
+        }),
+        requestAuthenticatedGraphQL<TodoCategoriesQuery>(
+          TodoCategoriesDocument,
+        ),
+      ]);
+      setItems(itemsData.items.filter((item): item is TodoItem => item !== null));
+      setCategories(
+        categoriesData.categories.filter(
+          (category): category is TodoCategory => category !== null,
+        ),
+      );
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "Falha ao carregar os TODOs.",
+      );
     } finally {
       setLoading(false);
     }
-  };
+  }, [requestAuthenticatedGraphQL, token]);
 
   React.useEffect(() => {
-    fetchHealth();
-  }, []);
+    void fetchTodoMetrics();
+  }, [fetchTodoMetrics]);
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
+  if (authLoading || !user || !token) {
+    return (
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {authLoading ? <CircularProgress /> : null}
+      </Box>
+    );
+  }
 
-  const handleCopyToken = () => {
-    if (token) {
-      navigator.clipboard.writeText(token);
-      setCopied(true);
-    }
-  };
-
-  const handleTestAuth = async () => {
-    setTestLoading(true);
-    try {
-      const data = await testAuthenticatedRequest();
-      setTestResult(data);
-    } catch (err: any) {
-      setTestResult({ erro: err.message });
-    } finally {
-      setTestLoading(false);
-    }
-  };
+  const resolvedCount = items.filter((item) => item.isResolved).length;
+  const pendingCount = items.length - resolvedCount;
+  const resolvedPercentage = items.length
+    ? Math.round((resolvedCount / items.length) * 100)
+    : 0;
+  const pendingPercentage = items.length ? 100 - resolvedPercentage : 0;
+  const categoryMetrics = categories
+    .map((category) => {
+      const categoryItems = items.filter(
+        (item) => item.category?.id === category.id,
+      );
+      const resolved = categoryItems.filter((item) => item.isResolved).length;
+      return {
+        id: category.id,
+        name: category.name,
+        total: categoryItems.length,
+        resolved,
+        pending: categoryItems.length - resolved,
+      };
+    })
 
   const drawerContent = (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <Box sx={{ p: 2.5, display: "flex", alignItems: "center", gap: 1 }}>
         <DashboardIcon color="primary" sx={{ fontSize: 30 }} />
         <Box>
-          <Typography variant="subtitle1" fontWeight={700} lineHeight={1.2}>
+          <Typography variant="subtitle1" fontWeight={700}>
             Projeto Aplicado
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Material UI Dashboard
+            Painel de Controle
           </Typography>
         </Box>
       </Box>
@@ -147,59 +154,33 @@ export default function Dashboard() {
             <ListItemIcon sx={{ minWidth: 40 }}>
               <DashboardIcon color="primary" />
             </ListItemIcon>
-            <ListItemText primary="Visão Geral" primaryTypographyProps={{ fontWeight: 600 }} />
+            <ListItemText primary="Visão Geral" />
           </ListItemButton>
         </ListItem>
         <ListItem disablePadding>
-          <ListItemButton component={NextLink} href="/sign-in" sx={{ borderRadius: 2 }}>
+          <ListItemButton component={NextLink} href="/todos" sx={{ borderRadius: 2 }}>
             <ListItemIcon sx={{ minWidth: 40 }}>
-              <VpnKeyIcon />
+              <ChecklistIcon />
             </ListItemIcon>
-            <ListItemText primary="Sign-in" />
+            <ListItemText primary="TODOs" />
           </ListItemButton>
         </ListItem>
       </List>
-      <Box sx={{ mt: "auto", p: 2 }}>
-        <Paper
-          elevation={0}
-          sx={{
-            p: 2,
-            backgroundColor: "#f1f5f9",
-            borderRadius: 2,
-            border: "1px solid #e2e8f0",
-          }}
-        >
-          <Typography variant="caption" fontWeight={700} color="text.secondary" display="block">
-            DRF & GRAPHQL READY
-          </Typography>
-          <Typography variant="body2" sx={{ my: 0.5, fontSize: "0.85rem" }}>
-            Tokens de autenticação gerenciados via Django REST Framework.
-          </Typography>
-          <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-            <Chip
-              label={token ? "Autenticado" : "Sessão Pública"}
-              size="small"
-              color={token ? "success" : "default"}
-              variant="outlined"
-            />
-          </Stack>
-        </Paper>
-      </Box>
     </Box>
   );
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", backgroundColor: "#f8fafc" }}>
-      {/* AppBar */}
+    <Box sx={{ display: "flex", minHeight: "100vh", backgroundColor: "background.default" }}>
       <AppBar
         position="fixed"
         sx={{
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           ml: { sm: `${drawerWidth}px` },
-          backgroundColor: "#ffffff",
-          color: "#0f172a",
+          backgroundColor: "background.paper",
+          color: "text.primary",
           boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-          borderBottom: "1px solid #e2e8f0",
+          borderBottom: 1,
+          borderColor: "divider",
         }}
       >
         <Toolbar sx={{ justifyContent: "space-between" }}>
@@ -207,79 +188,61 @@ export default function Dashboard() {
             <IconButton
               color="inherit"
               edge="start"
-              onClick={handleDrawerToggle}
+              onClick={() => setMobileOpen((open) => !open)}
               sx={{ mr: 2, display: { sm: "none" } }}
             >
               <MenuIcon />
             </IconButton>
-            <Typography variant="h6" noWrap component="div" fontWeight={700}>
+            <Typography variant="h6" fontWeight={700}>
               Painel de Controle
             </Typography>
           </Box>
-
-          <Stack direction="row" spacing={1.5} alignItems="center">
-            {user ? (
-              <Stack direction="row" spacing={1.5} alignItems="center">
-                <Avatar
-                  src={user.picture}
-                  alt={user.first_name || user.username}
-                  sx={{ width: 32, height: 32, bgcolor: "primary.main" }}
-                >
-                  {(user.first_name || user.username).charAt(0).toUpperCase()}
-                </Avatar>
-                <Typography variant="body2" fontWeight={600} sx={{ display: { xs: "none", md: "block" } }}>
-                  {user.first_name || user.username}
-                </Typography>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  color="error"
-                  startIcon={<LogoutIcon />}
-                  onClick={logout}
-                >
-                  Sair
-                </Button>
-              </Stack>
-            ) : (
-              <>
-                <Button
-                  component={NextLink}
-                  href="/sign-in-side"
-                  variant="outlined"
-                  size="small"
-                  startIcon={<LoginIcon />}
-                >
-                  Sign-in Side
-                </Button>
-                <Button
-                  component={NextLink}
-                  href="/sign-in"
-                  variant="contained"
-                  size="small"
-                  startIcon={<VpnKeyIcon />}
-                >
-                  Sign-in
-                </Button>
-              </>
-            )}
-            <IconButton color="inherit">
-              <Badge badgeContent={1} color="primary">
-                <NotificationsIcon />
-              </Badge>
-            </IconButton>
-          </Stack>
+          {user ? (
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <ThemeSelector />
+              <Avatar
+                src={user.picture}
+                alt={user.first_name || user.username}
+                sx={{ width: 32, height: 32, bgcolor: "primary.main" }}
+              >
+                {(user.first_name || user.username).charAt(0).toUpperCase()}
+              </Avatar>
+              <Typography
+                variant="body2"
+                fontWeight={600}
+                sx={{ display: { xs: "none", md: "block" } }}
+              >
+                {user.first_name || user.username}
+              </Typography>
+              <Button
+                variant="outlined"
+                size="small"
+                color="error"
+                startIcon={<LogoutIcon />}
+                onClick={() => void logout()}
+              >
+                Sair
+              </Button>
+            </Stack>
+          ) : (
+            <Button
+              component={NextLink}
+              href="/sign-in"
+              variant="contained"
+              size="small"
+              startIcon={<VpnKeyIcon />}
+            >
+              Entrar
+            </Button>
+          )}
         </Toolbar>
       </AppBar>
 
-      {/* Responsive Drawer Sidebar */}
-      <Box
-        component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-      >
+      <Box component="nav" sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}>
         <Drawer
           variant="temporary"
           open={mobileOpen}
-          onClose={handleDrawerToggle}
+          onClose={() => setMobileOpen(false)}
           ModalProps={{ keepMounted: true }}
           sx={{
             display: { xs: "block", sm: "none" },
@@ -290,489 +253,180 @@ export default function Dashboard() {
         </Drawer>
         <Drawer
           variant="permanent"
+          open
           sx={{
             display: { xs: "none", sm: "block" },
             "& .MuiDrawer-paper": {
               boxSizing: "border-box",
               width: drawerWidth,
-              borderRight: "1px solid #e2e8f0",
+              borderRight: 1,
+              borderColor: "divider",
             },
           }}
-          open
         >
           {drawerContent}
         </Drawer>
       </Box>
 
-      {/* Main Content */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
+          p: { xs: 2, md: 4 },
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           mt: 8,
         }}
       >
         <Container maxWidth="lg">
-          {/* Header Action Section */}
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-            <Box>
-              <Typography variant="h4" fontWeight={700} gutterBottom>
-                Visão Geral do Sistema
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Ambiente integrado Docker Compose com autenticação desacoplada Next.js + Django REST + MySQL.
-              </Typography>
-            </Box>
-            <Button
-              startIcon={loading ? <CircularProgress size={18} /> : <RefreshIcon />}
-              variant="outlined"
-              onClick={fetchHealth}
-              disabled={loading}
-              size="medium"
-            >
-              Atualizar Status
-            </Button>
-          </Box>
-
-          {/* Authentication & JWT Card */}
-          <Paper
-            elevation={2}
-            sx={{
-              p: 3,
-              mb: 4,
-              borderRadius: 3,
-              border: token ? "1px solid #bbf7d0" : "1px solid #e2e8f0",
-              backgroundColor: token ? "#f0fdf4" : "#ffffff",
-            }}
-          >
-            {user && token ? (
-              <Box>
-                <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ sm: "center" }} spacing={2} sx={{ mb: 2 }}>
-                  <Stack direction="row" spacing={2} alignItems="center">
-                    <Avatar
-                      src={user.picture}
-                      alt={user.first_name || user.username}
-                      sx={{ width: 56, height: 56, bgcolor: "success.main" }}
-                    >
-                      {(user.first_name || user.username).charAt(0).toUpperCase()}
-                    </Avatar>
-                    <Box>
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <Typography variant="h6" fontWeight={700}>
-                          {user.first_name ? `${user.first_name} ${user.last_name || ""}` : user.username}
+          <Card>
+            <CardHeader
+              title="Métricas dos TODOs"
+              subheader={
+                token
+                  ? "Resumo dos itens da sua lista"
+                  : "Faça login para visualizar suas métricas"
+              }
+              titleTypographyProps={{ variant: "h6", fontWeight: 700 }}
+              action={
+                token ? (
+                  <Button
+                    size="small"
+                    startIcon={
+                      loading ? <CircularProgress size={16} /> : <RefreshIcon />
+                    }
+                    onClick={() => void fetchTodoMetrics()}
+                    disabled={loading}
+                  >
+                    Atualizar
+                  </Button>
+                ) : undefined
+              }
+            />
+            <Divider />
+            <CardContent>
+              {error && <Alert severity="error">{error}</Alert>}
+              {!token ? (
+                <Typography color="text.secondary">
+                  Os gráficos serão exibidos após a autenticação.
+                </Typography>
+              ) : loading && !items.length ? (
+                <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <Grid container spacing={3}>
+                  <Grid item xs={12}>
+                    <Card variant="outlined" sx={{ height: "100%" }}>
+                      <CardContent>
+                        <Typography variant="subtitle1" fontWeight={700}>
+                          Resumo global dos itens
                         </Typography>
-                        <Chip label="Autenticado" color="success" size="small" />
-                      </Stack>
-                      <Typography variant="body2" color="text.secondary">
-                        {user.email} &bull; ID: {user.id}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                  <Button
-                    variant="outlined"
-                    color="error"
-                    size="small"
-                    startIcon={<LogoutIcon />}
-                    onClick={logout}
-                  >
-                    Encerrar Sessão
-                  </Button>
-                </Stack>
-
-                <Divider sx={{ my: 2 }} />
-
-                <Box sx={{ mt: 2 }}>
-                  <Typography variant="subtitle2" fontWeight={700} color="text.secondary" gutterBottom>
-                    ACCESS TOKEN JWT (GRAPHQL)
-                  </Typography>
-                  <Paper
-                    variant="outlined"
-                    sx={{
-                      p: 1.5,
-                      backgroundColor: "#ffffff",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      fontFamily: "monospace",
-                      fontSize: "0.95rem",
-                      borderRadius: 2,
-                    }}
-                  >
-                    <Typography sx={{ fontFamily: "monospace", wordBreak: "break-all" }}>
-                      {token}
-                    </Typography>
-                    <Tooltip title={copied ? "Copiado!" : "Copiar Token"}>
-                      <IconButton onClick={handleCopyToken} color="primary" size="small">
-                        <ContentCopyIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </Paper>
-                </Box>
-                <Box sx={{ mt: 2 }}>
-                  <Typography variant="subtitle2" fontWeight={700} color="text.secondary" gutterBottom>
-                    REFRESH TOKEN JWT (GRAPHQL)
-                  </Typography>
-                  <Paper
-                    variant="outlined"
-                    sx={{
-                      p: 1.5,
-                      backgroundColor: "#ffffff",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      fontFamily: "monospace",
-                      fontSize: "0.95rem",
-                      borderRadius: 2,
-                    }}
-                  >
-                    <Typography sx={{ fontFamily: "monospace", wordBreak: "break-all" }}>
-                      {localStorage.getItem("drf_refresh_token")}
-                    </Typography>
-                    <Tooltip title={copied ? "Copiado!" : "Copiar Token"}>
-                      <IconButton onClick={handleCopyToken} color="primary" size="small">
-                        <ContentCopyIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </Paper>
-                </Box>
-
-                <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ mt: 2.5 }} alignItems={{ md: "center" }}>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    startIcon={testLoading ? <CircularProgress size={16} /> : <KeyIcon />}
-                    onClick={handleTestAuth}
-                    disabled={testLoading}
-                  >
-                    Test GraphQL `me` Query
-                  </Button>
-                  <Typography variant="caption" color="text.secondary">
-                    Header utilizado: <code>Authorization: Bearer {token.slice(0, 8)}...</code>
-                  </Typography>
-                </Stack>
-
-                {testResult && (
-                  <Paper
-                    sx={{
-                      mt: 2,
-                      p: 2,
-                      backgroundColor: "#0f172a",
-                      color: "#38bdf8",
-                      fontFamily: "monospace",
-                      fontSize: "0.85rem",
-                      borderRadius: 2,
-                    }}
-                  >
-                    <Typography variant="caption" sx={{ color: "#94a3b8", display: "block", mb: 0.5 }}>
-                      Response received from the authenticated GraphQL API:
-                    </Typography>
-                    <pre style={{ margin: 0, overflowX: "auto" }}>
-                      {JSON.stringify(testResult, null, 2)}
-                    </pre>
-                  </Paper>
-                )}
-              </Box>
-            ) : (
-              <Box>
-                <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ sm: "center" }} spacing={2}>
-                  <Box>
-                    <Typography variant="h6" fontWeight={700}>
-                      Decoupled Authentication (Frontend &rarr; GraphQL)
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, maxWidth: 650 }}>
-                      O login do Google ocorre 100% no Next.js (sem templates do Django). As credenciais são validadas pelo backend Django REST, que cria o usuário no MySQL e retorna tokens JWT.
-                    </Typography>
-                  </Box>
-                  <Stack direction="row" spacing={1.5}>
-                    <Button
-                      component={NextLink}
-                      href="/sign-in-side"
-                      variant="contained"
-                      startIcon={<LoginIcon />}
-                      size="medium"
-                    >
-                      Fazer Login
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      startIcon={<ScienceIcon />}
-                      size="medium"
-                      onClick={() => loginDemoUser()}
-                    >
-                      Login Teste
-                    </Button>
-                  </Stack>
-                </Stack>
-              </Box>
-            )}
-          </Paper>
-
-          {/* KPI Stat Cards */}
-          <Grid container spacing={3} sx={{ mb: 4 }}>
-            {/* Next.js Card */}
-            <Grid item xs={12} sm={6} md={4}>
-              <Card>
-                <CardContent>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Frontend
-                    </Typography>
-                    <Chip
-                      icon={<CheckCircleIcon sx={{ fontSize: "16px !important" }} />}
-                      label="Online"
-                      color="success"
-                      size="small"
-                      variant="outlined"
-                    />
-                  </Stack>
-                  <Typography variant="h5" fontWeight={700}>
-                    Next.js 14
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    Porta: <strong>3000</strong> &bull; Material UI v5
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            {/* Django Card */}
-            <Grid item xs={12} sm={6} md={4}>
-              <Card>
-                <CardContent>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Backend API
-                    </Typography>
-                    {loading ? (
-                      <CircularProgress size={16} />
-                    ) : health?.status === "ok" ? (
-                      <Chip
-                        icon={<CheckCircleIcon sx={{ fontSize: "16px !important" }} />}
-                        label="Online"
-                        color="success"
-                        size="small"
-                        variant="outlined"
-                      />
-                    ) : (
-                      <Chip
-                        icon={<ErrorIcon sx={{ fontSize: "16px !important" }} />}
-                        label="Offline"
-                        color="error"
-                        size="small"
-                        variant="outlined"
-                      />
-                    )}
-                  </Stack>
-                  <Typography variant="h5" fontWeight={700}>
-                    Django REST
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    Porta: <strong>8000</strong> &bull; JWT Auth
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            {/* MySQL Card */}
-            <Grid item xs={12} sm={6} md={4}>
-              <Card>
-                <CardContent>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Banco de Dados
-                    </Typography>
-                    {loading ? (
-                      <CircularProgress size={16} />
-                    ) : health?.database?.status === "connected" ? (
-                      <Chip
-                        icon={<CheckCircleIcon sx={{ fontSize: "16px !important" }} />}
-                        label="Conectado"
-                        color="success"
-                        size="small"
-                        variant="outlined"
-                      />
-                    ) : (
-                      <Chip
-                        icon={<ErrorIcon sx={{ fontSize: "16px !important" }} />}
-                        label="Desconectado"
-                        color="error"
-                        size="small"
-                        variant="outlined"
-                      />
-                    )}
-                  </Stack>
-                  <Typography variant="h5" fontWeight={700}>
-                    MySQL 8.0
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    Porta: <strong>3306</strong> &bull; Volume persistente
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
-
-          {/* Diagnostic Details */}
-          {error && (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              Erro de comunicação: {error}
-            </Alert>
-          )}
-
-          <Grid container spacing={3} sx={{ mb: 4 }}>
-            {/* Services Table */}
-            <Grid item xs={12} md={8}>
-              <Card>
-                <CardHeader
-                  title="Containers do Docker Compose"
-                  subheader="Status de orquestração e portas expostas"
-                  titleTypographyProps={{ variant: "h6", fontWeight: 700 }}
-                />
-                <Divider />
-                <TableContainer>
-                  <Table>
-                    <TableHead sx={{ backgroundColor: "#f8fafc" }}>
-                      <TableRow>
-                        <TableCell sx={{ fontWeight: 600 }}>Serviço</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>Container</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>Porta Interna / Host</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>Tecnologia</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      <TableRow hover>
-                        <TableCell sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <WebIcon color="primary" fontSize="small" />
-                          <strong>frontend</strong>
-                        </TableCell>
-                        <TableCell>nextjs_frontend</TableCell>
-                        <TableCell>3000 : 3000</TableCell>
-                        <TableCell>Next.js 14 + MUI</TableCell>
-                        <TableCell>
-                          <Chip label="Executando" color="success" size="small" />
-                        </TableCell>
-                      </TableRow>
-                      <TableRow hover>
-                        <TableCell sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <DnsIcon color="primary" fontSize="small" />
-                          <strong>backend</strong>
-                        </TableCell>
-                        <TableCell>django_backend</TableCell>
-                        <TableCell>8000 : 8000</TableCell>
-                        <TableCell>Django REST Framework</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={health?.status === "ok" ? "Executando" : "Verificando"}
-                            color={health?.status === "ok" ? "success" : "warning"}
-                            size="small"
+                        <Stack spacing={1.5} sx={{ mt: 2 }}>
+                          <Stack
+                            direction="row"
+                            justifyContent="space-between"
+                          >
+                            <Typography variant="body2">
+                              Resolvidos: <strong>{resolvedCount}</strong> (
+                              {resolvedPercentage}%)
+                            </Typography>
+                            <Typography variant="body2">
+                              Pendentes: <strong>{pendingCount}</strong> (
+                              {pendingPercentage}%)
+                            </Typography>
+                          </Stack>
+                          <LinearProgress
+                            variant="determinate"
+                            value={resolvedPercentage}
+                            sx={{
+                              height: 12,
+                              borderRadius: 6,
+                              backgroundColor: "#f59e0b",
+                              "& .MuiLinearProgress-bar": {
+                                backgroundColor: "#16a34a",
+                                borderRadius: 6,
+                              },
+                            }}
                           />
-                        </TableCell>
-                      </TableRow>
-                      <TableRow hover>
-                        <TableCell sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <StorageIcon color="primary" fontSize="small" />
-                          <strong>db</strong>
-                        </TableCell>
-                        <TableCell>mysql_db</TableCell>
-                        <TableCell>3306 : 3306</TableCell>
-                        <TableCell>MySQL 8.0</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={health?.database?.status === "connected" ? "Saudável" : "Verificando"}
-                            color={health?.database?.status === "connected" ? "success" : "warning"}
-                            size="small"
-                          />
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </Card>
-            </Grid>
-
-            {/* Quick Actions & Templates Showcase */}
-            <Grid item xs={12} md={4}>
-              <Card sx={{ height: "100%" }}>
-                <CardHeader
-                  title="Templates Material UI"
-                  subheader="Telas disponíveis para navegação"
-                  titleTypographyProps={{ variant: "h6", fontWeight: 700 }}
-                />
-                <Divider />
-                <CardContent>
-                  <Stack spacing={2}>
-                    <Box sx={{ p: 2, border: "1px solid #e2e8f0", borderRadius: 2 }}>
-                      <Typography variant="subtitle2" fontWeight={700}>
-                        Sign-in Side Template
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                        Layout em duas colunas com área de branding e formulário com Google OAuth.
-                      </Typography>
-                      <Button
-                        component={NextLink}
-                        href="/sign-in-side"
-                        variant="contained"
-                        size="small"
-                        fullWidth
-                      >
-                        Abrir Sign-in Side
-                      </Button>
-                    </Box>
-
-                    <Box sx={{ p: 2, border: "1px solid #e2e8f0", borderRadius: 2 }}>
-                      <Typography variant="subtitle2" fontWeight={700}>
-                        Sign-in Template Clássico
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                        Card centralizado com design minimalista e suporte a credenciais.
-                      </Typography>
-                      <Button
-                        component={NextLink}
-                        href="/sign-in"
-                        variant="outlined"
-                        size="small"
-                        fullWidth
-                      >
-                        Abrir Sign-in
-                      </Button>
-                    </Box>
-
-                    <Box sx={{ p: 2, border: "1px solid #e2e8f0", borderRadius: 2 }}>
-                      <Typography variant="subtitle2" fontWeight={700}>
-                        Django Admin
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                        Gerenciamento de usuários, tabelas MySQL e tokens de API.
-                      </Typography>
-                      <Button
-                        component="a"
-                        href={`${apiUrl}/admin/`}
-                        target="_blank"
-                        variant="text"
-                        size="small"
-                        fullWidth
-                        endIcon={<OpenInNewIcon />}
-                      >
-                        Acessar Django Admin
-                      </Button>
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
+                          <Typography variant="caption" color="text.secondary">
+                            Total global: {items.length} item(ns)
+                          </Typography>
+                        </Stack>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  {categoryMetrics.map((category) => {
+                    const resolvedPercentage = category.total
+                      ? Math.round((category.resolved / category.total) * 100)
+                      : 0;
+                    const pendingPercentage = category.total
+                      ? 100 - resolvedPercentage
+                      : 0;
+                    return (
+                      <Grid item xs={12} md={6} key={category.name}>
+                        <Card variant="outlined" sx={{ height: "100%" }}>
+                          <CardContent>
+                            {category.id ? (
+                              <Typography
+                                component={NextLink}
+                                href={`/todos/activities/${category.id}`}
+                                variant="subtitle1"
+                                fontWeight={700}
+                                sx={{
+                                  color: "primary.main",
+                                  textDecoration: "none",
+                                  "&:hover": { textDecoration: "underline" },
+                                }}
+                              >
+                                {category.name}
+                              </Typography>
+                            ) : (
+                              <Typography variant="subtitle1" fontWeight={700}>
+                                {category.name}
+                              </Typography>
+                            )}
+                            <Stack spacing={1.5} sx={{ mt: 2 }}>
+                              <Stack
+                                direction="row"
+                                justifyContent="space-between"
+                              >
+                                <Typography variant="body2">
+                                  Resolvidos: <strong>{category.resolved}</strong>{" "}
+                                  ({resolvedPercentage}%)
+                                </Typography>
+                                <Typography variant="body2">
+                                  Pendentes: <strong>{category.pending}</strong>{" "}
+                                  ({pendingPercentage}%)
+                                </Typography>
+                              </Stack>
+                              <LinearProgress
+                                variant="determinate"
+                                value={resolvedPercentage}
+                                sx={{
+                                  height: 10,
+                                  borderRadius: 5,
+                                  backgroundColor: "#f59e0b",
+                                  "& .MuiLinearProgress-bar": {
+                                    backgroundColor: "#16a34a",
+                                    borderRadius: 5,
+                                  },
+                                }}
+                              />
+                              <Typography variant="caption" color="text.secondary">
+                                Total de itens na atividade: {category.total} item(ns)
+                              </Typography>
+                            </Stack>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+              )}
+            </CardContent>
+          </Card>
         </Container>
       </Box>
-
-      <Snackbar
-        open={copied}
-        autoHideDuration={2000}
-        onClose={() => setCopied(false)}
-        message="Access token copiado para a área de transferência!"
-      />
     </Box>
   );
 }

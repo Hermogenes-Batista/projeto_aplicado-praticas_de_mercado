@@ -1,29 +1,30 @@
 import { createTheme } from "@mui/material/styles";
 
-const theme = createTheme({
-  palette: {
-    mode: "light",
-    primary: {
-      main: "#1976d2",
-      light: "#42a5f5",
-      dark: "#1565c0",
-      contrastText: "#ffffff",
-    },
-    secondary: {
-      main: "#9c27b0",
-      light: "#ba68c8",
-      dark: "#7b1fa2",
-      contrastText: "#ffffff",
-    },
-    background: {
-      default: "#f8fafc",
-      paper: "#ffffff",
-    },
-    text: {
-      primary: "#0f172a",
-      secondary: "#64748b",
-    },
-  },
+import type { ThemeMode } from "@/context/ThemeContext";
+
+export const createAppTheme = (themeMode: ThemeMode) => createTheme({
+  palette: themeMode === "dark"
+    ? {
+        mode: "dark",
+        primary: { main: "#90caf9" },
+        secondary: { main: "#ce93d8" },
+        background: { default: "#121212", paper: "#1e1e1e" },
+      }
+    : themeMode === "pink"
+      ? {
+          mode: "light",
+          primary: { main: "#d81b60", light: "#ec407a", dark: "#ad1457", contrastText: "#ffffff" },
+          secondary: { main: "#8e24aa", light: "#ba68c8", dark: "#6a1b9a", contrastText: "#ffffff" },
+          background: { default: "#fff5f8", paper: "#ffffff" },
+          text: { primary: "#4a1025", secondary: "#8a5369" },
+        }
+      : {
+          mode: "light",
+          primary: { main: "#1976d2", light: "#42a5f5", dark: "#1565c0", contrastText: "#ffffff" },
+          secondary: { main: "#9c27b0", light: "#ba68c8", dark: "#7b1fa2", contrastText: "#ffffff" },
+          background: { default: "#f8fafc", paper: "#ffffff" },
+          text: { primary: "#0f172a", secondary: "#64748b" },
+        },
   typography: {
     fontFamily: [
       "-apple-system",
@@ -81,5 +82,3 @@ const theme = createTheme({
     },
   },
 });
-
-export default theme;

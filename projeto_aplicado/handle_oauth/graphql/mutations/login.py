@@ -28,6 +28,10 @@ class LoginMutation(graphene.Mutation):
 
         user = serializer.validated_data["user"]
         refresh = RefreshToken.for_user(user)
+        info.context._auth_tokens = (
+            str(refresh.access_token),
+            str(refresh),
+        )
         return cls(
             success=True,
             errors=[],

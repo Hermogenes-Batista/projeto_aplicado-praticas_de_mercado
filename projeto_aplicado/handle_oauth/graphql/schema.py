@@ -1,10 +1,10 @@
 import graphene
 
 from .mutations import AuthMutation
-from .queries import MeQuery
+from .queries import AuthQuery
 
 
-class QueryRoot(MeQuery, graphene.ObjectType):
+class QueryRoot(AuthQuery, graphene.ObjectType):
     pass
 
 

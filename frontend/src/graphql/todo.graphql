@@ -1,0 +1,128 @@
+query TodoItems($isResolved: Boolean) {
+  items(isResolved: $isResolved) {
+    id
+    name
+    createdAt
+    updatedAt
+    isResolved
+    category: activity {
+      id
+      name
+    }
+  }
+}
+
+query TodoCategories {
+  categories: activities {
+    id
+    name
+    createdAt
+    updatedAt
+    isResolved
+  }
+}
+
+mutation CreateTodoCategory($name: String!) {
+  createCategory: createActivity(name: $name) {
+    category: activity {
+      id
+      name
+      createdAt
+      updatedAt
+      isResolved
+    }
+    errors
+  }
+}
+
+mutation UpdateTodoCategory($id: UUID!, $name: String!) {
+  updateCategory: updateActivity(id: $id, name: $name) {
+    category: activity {
+      id
+      name
+      createdAt
+      updatedAt
+      isResolved
+    }
+    errors
+  }
+}
+
+mutation DeleteTodoCategory($id: UUID!) {
+  deleteCategory: deleteActivity(id: $id) {
+    success
+    errors
+  }
+}
+
+mutation CompleteTodoActivity($id: UUID!, $isResolved: Boolean!) {
+  completeActivity(id: $id, isResolved: $isResolved) {
+    activity {
+      id
+      name
+      createdAt
+      updatedAt
+      isResolved
+    }
+    errors
+  }
+}
+
+mutation CreateTodoItem(
+  $name: String!
+  $categoryId: UUID!
+  $isResolved: Boolean
+) {
+  createItem(
+    name: $name
+    activityId: $categoryId
+    isResolved: $isResolved
+  ) {
+    item {
+      id
+      name
+      createdAt
+      updatedAt
+      isResolved
+      category: activity {
+        id
+        name
+      }
+    }
+    errors
+  }
+}
+
+mutation UpdateTodoItem(
+  $id: UUID!
+  $name: String!
+  $categoryId: UUID!
+  $isResolved: Boolean!
+) {
+  updateItem(
+    id: $id
+    name: $name
+    activityId: $categoryId
+    isResolved: $isResolved
+  ) {
+    item {
+      id
+      name
+      createdAt
+      updatedAt
+      isResolved
+      category: activity {
+        id
+        name
+      }
+    }
+    errors
+  }
+}
+
+mutation DeleteTodoItem($id: UUID!) {
+  deleteItem(id: $id) {
+    success
+    errors
+  }
+}

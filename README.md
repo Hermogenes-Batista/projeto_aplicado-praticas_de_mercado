@@ -57,22 +57,26 @@ docker compose down -v
 ## 🌐 Endpoints e Acessos
 
 - **Frontend (Next.js):** [http://localhost:3000](http://localhost:3000)
-  - **Dashboard (Painel):** [http://localhost:3000/](http://localhost:3000/) - Painel moderno com métricas, monitoramento em tempo real dos containers e atalhos.
-  - **Sign-in Side Template:** [http://localhost:3000/sign-in-side](http://localhost:3000/sign-in-side) - Layout oficial de autenticação em duas colunas (Branding + Formulário) com suporte ao Google OAuth.
+  - **Dashboard (Painel):** [http://localhost:3000/](http://localhost:3000/) - Painel com métricas dos TODOs e atalhos de navegação.
   - **Sign-in Template:** [http://localhost:3000/sign-in](http://localhost:3000/sign-in) - Layout oficial clássico de login com card centralizado.
-- **Backend (Django REST Framework):** [http://localhost:8000](http://localhost:8000)
-- **API de Autenticação Desacoplada (Google / JWT):**
-  - `POST /api/auth/google/`: Recebe `credential` (Google ID Token) ou `code` do frontend, valida no Google, cria/busca usuário no MySQL e retorna `access` e `refresh`.
-  - `POST /api/auth/token/`: Obtém `access` e `refresh` usando `username` e `password`.
-  - `POST /api/auth/token/refresh/`: Obtém um novo `access` usando um `refresh` válido.
-  - `GET /api/auth/me/`: Retorna os dados do usuário autenticado via Header `Authorization: Bearer <access>`.
-  - `POST /api/auth/logout/`: Invalida o refresh token enviado.
-  - `GET /api/auth/config/`: Expõe o `client_id` do Google para o frontend.
+- **Backend (Django):** [http://localhost:8000](http://localhost:8000)
+- **Autenticação GraphQL:**
+  - query `me`: retorna o usuário autenticado;
+  - query `googleClientId`: expõe o `client_id` público do Google;
+  - mutation `login`: autentica com usuário/e-mail e senha;
+  - mutation `loginWithGoogle`: autentica com credencial ou código OAuth do Google;
+  - mutation `refreshToken`: renova a sessão usando o cookie `refresh_token`;
+  - mutation `logout`: invalida o refresh token e remove os cookies.
+  O DRF e o SimpleJWT continuam sendo usados internamente para validação,
+  serializers e geração/blacklist dos tokens, mas não há endpoints REST de
+  autenticação registrados para o frontend.
 - **Health Check API:** [http://localhost:8000/api/health/](http://localhost:8000/api/health/)
   - Retorna o status do Django e da conexão ativa com o MySQL.
 - **GraphQL API:** [http://localhost:8000/graphql/](http://localhost:8000/graphql/)
-  - `login`: autentica com usuário e senha e retorna tokens JWT.
-  - `logout`: invalida o refresh token informado.
+  - `login`: autentica com usuário e senha e define os cookies JWT.
+  - `loginWithGoogle`: autentica com Google e define os cookies JWT.
+  - `refreshToken`: renova os cookies JWT.
+  - `logout`: invalida o refresh token do cookie e remove os cookies.
   - `me`: retorna os dados do usuário autenticado.
 - **Django Admin:** [http://localhost:8000/admin/](http://localhost:8000/admin/)
 - **MySQL:** `localhost:3306` (Usuário: `app_user`, Senha: `app_password`, Database: `projeto_db`)
@@ -83,9 +87,12 @@ docker compose down -v
 
 O fluxo de autenticação foi 100% desacoplado dos templates do Django:
 1. O frontend Next.js executa o login do Google (via **Google Identity Services** ou formulário).
-2. O Next.js envia a credencial para `POST /api/auth/google/`.
+2. O Next.js envia a credencial para a mutation `loginWithGoogle`.
 3. O Django valida a credencial com a Google API e gera tokens JWT com validade de 5 minutos para o access token e 1 dia para o refresh token.
-4. O Next.js armazena os tokens e renova o access token quando necessário.
+4. O backend entrega os tokens em cookies `HttpOnly`, `SameSite` e protegidos
+   por configuração `Secure` fora do desenvolvimento local. O Next.js mantém
+   apenas o access token em memória e renova a sessão usando o cookie de
+   refresh, sem persistir tokens no `localStorage`.
 
 ### Exemplo de uso no Header (DRF e GraphQL):
 ```http
@@ -105,6 +112,85 @@ const response = await fetch('http://localhost:8000/graphql/', {
   })
 });
 ```
+
+## 🛡️ Segurança aplicada — OWASP Top 10:2025
+
+O protótipo aplica medidas de **Secure by Design** para mitigar as seguintes
+categorias da OWASP Top 10:2025:
+
+### A01 — Broken Access Control
+
+- As consultas de atividades e itens filtram os registros pelo usuário
+  autenticado (`created_by`).
+- As mutações validam a propriedade do registro antes de editar ou excluir
+  qualquer dado.
+- A atividade informada para um item também precisa pertencer ao usuário
+  autenticado.
+- Implementação principal:
+  - `projeto_aplicado/todo_app/graphql/queries/categories.py`
+  - `projeto_aplicado/todo_app/graphql/queries/items.py`
+  - `projeto_aplicado/todo_app/graphql/mutations/helpers.py`
+  - `projeto_aplicado/todo_app/graphql/mutations/activity.py`
+  - `projeto_aplicado/todo_app/graphql/mutations/item.py`
+
+### A07 — Authentication Failures
+
+- O backend utiliza access tokens e refresh tokens JWT com validade limitada.
+- Refresh tokens são rotacionados e enviados para blacklist após a rotação.
+- O logout invalida o refresh token.
+- Access e refresh tokens são enviados por cookies `HttpOnly`, reduzindo a
+  exposição dos tokens a scripts executados no navegador.
+- A sessão persistida é validada no backend antes de liberar o dashboard.
+- O frontend renova o access token quando necessário e encerra a sessão
+  quando a renovação falha.
+- Há logout automático por inatividade e sincronização de logout entre abas.
+- Implementação principal:
+  - `projeto_aplicado/praticas_de_mercado/settings.py`
+  - `projeto_aplicado/handle_oauth/serializers/login.py`
+  - `projeto_aplicado/handle_oauth/serializers/logout.py`
+  - `projeto_aplicado/handle_oauth/graphql/utils.py`
+  - `frontend/src/context/AuthContext.tsx`
+
+### A05 — Injection
+
+- O acesso ao banco utiliza o ORM do Django, sem SQL concatenado a partir de
+  entradas do usuário.
+- Serializers validam os dados recebidos antes de persistir atividades e itens.
+- Operações GraphQL usam variáveis tipadas, em vez de interpolar valores
+  diretamente nas consultas.
+- O React escapa valores textuais renderizados na interface por padrão.
+- Implementação principal:
+  - `projeto_aplicado/todo_app/serializers/activity.py`
+  - `projeto_aplicado/todo_app/serializers/item.py`
+  - `projeto_aplicado/todo_app/graphql/mutations/`
+  - `frontend/src/graphql/todo.graphql`
+
+### Uso de inteligência artificial no desenvolvimento
+
+O desenvolvimento e a auditoria do código foram realizados com auxílio de
+inteligência artificial, utilizada para:
+
+- gerar e refatorar código do frontend e backend;
+- analisar fluxos de autenticação e controles de acesso;
+- revisar possíveis riscos de segurança;
+- depurar erros e validar alterações com builds e verificações do projeto.
+
+Foi utilizado o **GitHub Copilot CLI** como ambiente de assistência durante o
+processo. O uso de IA foi complementar à revisão técnica humana e não substitui
+a validação, os testes e a responsabilidade do desenvolvedor pelo código
+entregue.
+
+### Configuração segura por padrão
+
+- `DEBUG` assume `False` quando não configurado.
+- O CORS não permite todas as origens por padrão; origens explícitas devem ser
+  configuradas em `CORS_ALLOWED_ORIGINS`.
+- A chave secreta não utiliza mais uma chave fixa de desenvolvimento como
+  fallback. Quando `DJANGO_SECRET_KEY` não é informada, uma chave aleatória é
+  gerada para a execução atual.
+- Em desenvolvimento, `ALLOWED_HOSTS` é limitado a `localhost`, `127.0.0.1`,
+  `backend` e `0.0.0.0`. Os valores de produção serão fornecidos pelo ambiente
+  de CI/CD.
 
 
 ---
