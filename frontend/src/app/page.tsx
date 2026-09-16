@@ -36,8 +36,8 @@ import NextLink from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import ThemeSelector from "@/components/ThemeSelector";
 import {
-  TodoCategoriesDocument,
-  TodoCategoriesQuery,
+  TodoActivitiesDocument,
+  TodoActivitiesQuery,
   TodoItemsDocument,
   TodoItemsQuery,
 } from "@/graphql/generated";
@@ -45,12 +45,12 @@ import {
 const drawerWidth = 240;
 
 type TodoItem = NonNullable<TodoItemsQuery["items"][number]>;
-type TodoCategory = NonNullable<TodoCategoriesQuery["categories"][number]>;
+type TodoCategory = NonNullable<TodoActivitiesQuery["activities"][number]>;
 
 export default function Dashboard() {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [items, setItems] = React.useState<TodoItem[]>([]);
-  const [categories, setCategories] = React.useState<TodoCategory[]>([]);
+  const [activities, setActivities] = React.useState<TodoCategory[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const {
@@ -64,25 +64,25 @@ export default function Dashboard() {
   const fetchTodoMetrics = React.useCallback(async () => {
     if (!token) {
       setItems([]);
-      setCategories([]);
+      setActivities([]);
       return;
     }
 
     setLoading(true);
     setError(null);
     try {
-      const [itemsData, categoriesData] = await Promise.all([
+      const [itemsData, activitiesData] = await Promise.all([
         requestAuthenticatedGraphQL<TodoItemsQuery>(TodoItemsDocument, {
           isResolved: null,
         }),
-        requestAuthenticatedGraphQL<TodoCategoriesQuery>(
-          TodoCategoriesDocument,
+        requestAuthenticatedGraphQL<TodoActivitiesQuery>(
+          TodoActivitiesDocument,
         ),
       ]);
       setItems(itemsData.items.filter((item): item is TodoItem => item !== null));
-      setCategories(
-        categoriesData.categories.filter(
-          (category): category is TodoCategory => category !== null,
+      setActivities(
+        activitiesData.activities.filter(
+          (activity): activity is TodoCategory => activity !== null,
         ),
       );
     } catch (cause) {
@@ -119,18 +119,18 @@ export default function Dashboard() {
     ? Math.round((resolvedCount / items.length) * 100)
     : 0;
   const pendingPercentage = items.length ? 100 - resolvedPercentage : 0;
-  const categoryMetrics = categories
-    .map((category) => {
-      const categoryItems = items.filter(
-        (item) => item.category?.id === category.id,
+  const activityMetrics = activities
+    .map((activity) => {
+      const activityItems = items.filter(
+        (item) => item.activity?.id === activity.id,
       );
-      const resolved = categoryItems.filter((item) => item.isResolved).length;
+      const resolved = activityItems.filter((item) => item.isResolved).length;
       return {
-        id: category.id,
-        name: category.name,
-        total: categoryItems.length,
+        id: activity.id,
+        name: activity.name,
+        total: activityItems.length,
         resolved,
-        pending: categoryItems.length - resolved,
+        pending: activityItems.length - resolved,
       };
     })
 
@@ -355,21 +355,21 @@ export default function Dashboard() {
                       </CardContent>
                     </Card>
                   </Grid>
-                  {categoryMetrics.map((category) => {
-                    const resolvedPercentage = category.total
-                      ? Math.round((category.resolved / category.total) * 100)
+                  {activityMetrics.map((activity) => {
+                    const resolvedPercentage = activity.total
+                      ? Math.round((activity.resolved / activity.total) * 100)
                       : 0;
-                    const pendingPercentage = category.total
+                    const pendingPercentage = activity.total
                       ? 100 - resolvedPercentage
                       : 0;
                     return (
-                      <Grid item xs={12} md={6} key={category.name}>
+                      <Grid item xs={12} md={6} key={activity.name}>
                         <Card variant="outlined" sx={{ height: "100%" }}>
                           <CardContent>
-                            {category.id ? (
+                            {activity.id ? (
                               <Typography
                                 component={NextLink}
-                                href={`/todos/activities/${category.id}`}
+                                href={`/todos/activities/${activity.id}`}
                                 variant="subtitle1"
                                 fontWeight={700}
                                 sx={{
@@ -378,11 +378,11 @@ export default function Dashboard() {
                                   "&:hover": { textDecoration: "underline" },
                                 }}
                               >
-                                {category.name}
+                                {activity.name}
                               </Typography>
                             ) : (
                               <Typography variant="subtitle1" fontWeight={700}>
-                                {category.name}
+                                {activity.name}
                               </Typography>
                             )}
                             <Stack spacing={1.5} sx={{ mt: 2 }}>
@@ -391,11 +391,11 @@ export default function Dashboard() {
                                 justifyContent="space-between"
                               >
                                 <Typography variant="body2">
-                                  Resolvidos: <strong>{category.resolved}</strong>{" "}
+                                  Resolvidos: <strong>{activity.resolved}</strong>{" "}
                                   ({resolvedPercentage}%)
                                 </Typography>
                                 <Typography variant="body2">
-                                  Pendentes: <strong>{category.pending}</strong>{" "}
+                                  Pendentes: <strong>{activity.pending}</strong>{" "}
                                   ({pendingPercentage}%)
                                 </Typography>
                               </Stack>
@@ -413,7 +413,7 @@ export default function Dashboard() {
                                 }}
                               />
                               <Typography variant="caption" color="text.secondary">
-                                Total de itens na atividade: {category.total} item(ns)
+                                Total de itens na atividade: {activity.total} item(ns)
                               </Typography>
                             </Stack>
                           </CardContent>
