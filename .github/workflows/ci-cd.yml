@@ -21,7 +21,7 @@ jobs:
 
       - name: Validar variáveis de ambiente do Next.js
         run: |
-          URL="${{ vars.NEXT_PUBLIC_API_URL }}"
+          URL="${{ secrets.NEXT_PUBLIC_API_URL }}"
           
           if [ -z "$URL" ]; then
             echo "❌ ERRO CRÍTICO: A variável 'NEXT_PUBLIC_API_URL' não está definida no ambiente 'prod' do GitHub!"
@@ -84,7 +84,7 @@ jobs:
           push: true
           no-cache: true
           build-args: |
-            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
           tags: |
             ghcr.io/hermogenes-batista/projeto_aplicado-praticas_de_mercado-frontend:${{ github.sha }}
             ghcr.io/hermogenes-batista/projeto_aplicado-praticas_de_mercado-frontend:latest
