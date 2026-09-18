@@ -6,6 +6,11 @@ on:
       - feature/create-ci-cd-deployment  # Gatilho temporário para testes
       # - main                           # Será ativado após os testes
 
+
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
