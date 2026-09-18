@@ -19,6 +19,28 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v4.2.2
 
+      - name: Validar variáveis de ambiente do Next.js
+        run: |
+          URL="${{ vars.NEXT_PUBLIC_API_URL }}"
+          
+          if [ -z "$URL" ]; then
+            echo "❌ ERRO CRÍTICO: A variável 'NEXT_PUBLIC_API_URL' não está definida no ambiente 'prod' do GitHub!"
+            exit 1
+          fi
+          
+          if [[ ! "$URL" =~ ^https:// ]]; then
+            echo "❌ ERRO CRÍTICO: A URL da API deve começar obrigatoriamente com 'https://' em produção!"
+            echo "Valor atual: $URL"
+            exit 1
+          fi
+          
+          if [[ "$URL" == *"localhost"* ]]; then
+            echo "❌ ERRO CRÍTICO: A URL da API de produção não pode conter 'localhost'!"
+            exit 1
+          fi
+          
+          echo "✅ Variável NEXT_PUBLIC_API_URL validada com sucesso: $URL"
+
       - name: Configurar Docker Buildx
         uses: docker/setup-buildx-action@v3
 
