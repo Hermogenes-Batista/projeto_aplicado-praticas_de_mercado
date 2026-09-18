@@ -11,13 +11,22 @@ if [ -n "$DB_HOST" ]; then
   echo "MySQL esta pronto e aceitando conexoes!"
 fi
 
-echo "Executando migracoes do Django..."
-python projeto_aplicado/manage.py migrate --noinput
-
 if [ $# -gt 0 ]; then
   echo "Executando comando customizado: $@"
   exec "$@"
 else
-  echo "Iniciando servidor de desenvolvimento do Django..."
-  exec python projeto_aplicado/manage.py runserver 0.0.0.0:8000
+  echo "Executando migracoes do Django..."
+  python projeto_aplicado/manage.py migrate --noinput
+
+  echo "Iniciando Gunicorn..."
+  exec gunicorn praticas_de_mercado.wsgi:application \
+    --chdir projeto_aplicado \
+    --bind 0.0.0.0:8000 \
+    --workers 2 \
+    --threads 2 \
+    --timeout 120 \
+    --access-logfile - \
+    --error-logfile -
 fi
+#scp -i ~/.ssh/ssh-key-2026-09-18.key ubuntu@64.181.175.165:/opt/projeto-aplicado/
+export VM_HOST="64.181.175.165"
