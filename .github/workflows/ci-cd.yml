@@ -14,6 +14,7 @@ permissions:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    environment: prod
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4.2.2
@@ -70,6 +71,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build-and-push
+    environment: prod
     steps:
       - name: Executar comandos de deploy via SSH na VM
         uses: appleboy/ssh-action@v1.2.0
