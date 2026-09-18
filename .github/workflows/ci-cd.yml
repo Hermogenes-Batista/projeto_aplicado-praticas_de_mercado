@@ -61,7 +61,7 @@ jobs:
           platforms: linux/amd64
           push: true
           build-args: |
-            NEXT_PUBLIC_API_URL=https://duckdns.org
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
           tags: |
             ghcr.io/hermogenes-batista/projeto_aplicado-praticas_de_mercado-frontend:${{ github.sha }}
             ghcr.io/hermogenes-batista/projeto_aplicado-praticas_de_mercado-frontend:latest
