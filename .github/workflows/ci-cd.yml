@@ -44,8 +44,8 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ghcr.io/${{ steps.string.outputs.repo_lowercase }}-backend:${{ github.sha }}
-            ghcr.io/${{ steps.string.outputs.repo_lowercase }}-backend:latest
+            ghcr.io/hermogenes-batista/projeto_aplicado-praticas_de_mercado-backend:${{ github.sha }}
+            ghcr.io/hermogenes-batista/projeto_aplicado-praticas_de_mercado-backend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -62,8 +62,8 @@ jobs:
           build-args: |
             NEXT_PUBLIC_API_URL=https://duckdns.org
           tags: |
-            ghcr.io/${{ steps.string.outputs.repo_lowercase }}-frontend:${{ github.sha }}
-            ghcr.io/${{ steps.string.outputs.repo_lowercase }}-frontend:latest
+            ghcr.io/hermogenes-batista/projeto_aplicado-praticas_de_mercado-frontend:${{ github.sha }}
+            ghcr.io/hermogenes-batista/projeto_aplicado-praticas_de_mercado-frontend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
