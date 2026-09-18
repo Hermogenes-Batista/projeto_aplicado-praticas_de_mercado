@@ -120,7 +120,11 @@ jobs:
             # 4. Atualizar os serviços em background de forma transparente
             docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
 
-            # 5. Limpeza de imagens antigas sem uso (evita encher o disco da VM)
+            # 5. Rotação inteligente de histórico (Mantém os 2 últimos commits para rollback)
+            echo "Rotacionando imagens antigas..."
+            docker image rm $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "projeto_aplicado-praticas_de_mercado" | grep -v "latest" | tail -n +4) 2>/dev/null || true
+            
+            # Limpa camadas intermediárias sem tag (<none>)
             docker image prune -f
 
             # 6. Aguardar estabilização e rodar Health Check interno
