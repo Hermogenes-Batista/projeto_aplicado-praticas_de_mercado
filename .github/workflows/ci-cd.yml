@@ -60,13 +60,14 @@ jobs:
           file: ./frontend/Dockerfile.prod
           platforms: linux/amd64
           push: true
+          no-cache: true
           build-args: |
             NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
           tags: |
             ghcr.io/hermogenes-batista/projeto_aplicado-praticas_de_mercado-frontend:${{ github.sha }}
             ghcr.io/hermogenes-batista/projeto_aplicado-praticas_de_mercado-frontend:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+#          cache-from: type=gha
+#          cache-to: type=gha,mode=max
 
   deploy:
     runs-on: ubuntu-latest
