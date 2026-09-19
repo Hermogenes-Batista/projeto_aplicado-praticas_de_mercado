@@ -230,6 +230,14 @@ else:
         "http://127.0.0.1:3000",
     ]
 
+csrf_trusted_origins_env = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
+if csrf_trusted_origins_env:
+    CSRF_TRUSTED_ORIGINS = [
+        origin.strip()
+        for origin in csrf_trusted_origins_env.split(",")
+        if origin.strip()
+    ]
+
 # Google provider configuration (scopes for email and profile)
 google_client_id = (
     os.environ.get("GOOGLE_CLIENT_ID")

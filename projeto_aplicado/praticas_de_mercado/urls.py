@@ -17,9 +17,15 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
 
 from praticas_de_mercado.graphql_view import SecureGraphQLView
 from .schema import schema
+
+
+def health_check(request):
+    """Endpoint de health check utilizado pelo pipeline de CI/CD e pelo Nginx."""
+    return JsonResponse({"status": "ok"})
 
 
 urlpatterns = [
@@ -32,4 +38,5 @@ urlpatterns = [
         name='graphql',
     ),
 
+    path('api/health/', health_check, name='health_check'),
 ]
