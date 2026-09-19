@@ -3,8 +3,7 @@ name: Deploy de Produção (CI/CD)
 on:
   push:
     branches:
-      - feature/create-ci-cd-deployment  # Gatilho temporário para testes
-      # - main
+      - main
 
 
 permissions:
