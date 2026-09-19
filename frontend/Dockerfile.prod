@@ -1,41 +1,51 @@
 # =============================================================================
-# Stage 1: deps — instala apenas dependências de produção
+# Stage 1: deps — instala todas as dependências necessárias para o build
 # =============================================================================
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
-RUN npm ci --omit=dev
+RUN npm ci --legacy-peer-deps
 
 # =============================================================================
-# Stage 2: builder — compila o Next.js
+# Stage 2: builder — compila a aplicação Next.js
 # =============================================================================
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm ci
 
-# Copia o código fonte completo para o container
+# Copia os node_modules já instalados do estágio 'deps'
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Recebe a URL e injeta imediatamente antes do build do bundle
+# Desativa telemetria para acelerar o build
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Variáveis de ambiente de build
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
-RUN mkdir -p /app/public && npm run build
+RUN npm run build
 
 # =============================================================================
-# Stage 3: runner — imagem final mínima usando standalone output
+# Stage 3: runner — imagem final mínima e segura usando standalone output
 # =============================================================================
-FROM node:18-alpine AS runner
+FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+# Cria usuário sem privilégios de root para segurança
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
+
+# Copia apenas os artefatos compilados
 COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
 
 EXPOSE 3000
 
