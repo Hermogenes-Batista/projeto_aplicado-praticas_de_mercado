@@ -70,30 +70,12 @@ export default function SignIn() {
             backgroundColor: "background.paper",
           }}
         >
-          <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-            <Chip
-              label="Modelo MUI"
-              color="primary"
-              size="small"
-              sx={{ fontWeight: 600 }}
-            />
-            <Chip
-              label="Entrar"
-              variant="outlined"
-              size="small"
-              sx={{ fontWeight: 600 }}
-            />
-          </Stack>
-
           <Avatar sx={{ m: 1, bgcolor: "primary.main" }}>
             <LockOutlinedIcon />
           </Avatar>
 
           <Typography component="h1" variant="h5" fontWeight={700}>
             Entrar
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, textAlign: "center" }}>
-            Acesse o sistema com suas credenciais
           </Typography>
 
           {error && (
@@ -111,67 +93,67 @@ export default function SignIn() {
           <GoogleSignInButton redirectAfterLogin="/" />
 
 
-          <Divider sx={{ width: "100%", my: 1.5 }}>
-            <Typography variant="caption" color="text.secondary">
-              OU COM E-MAIL
-            </Typography>
-          </Divider>
+          {/*<Divider sx={{ width: "100%", my: 1.5 }}>*/}
+          {/*  <Typography variant="caption" color="text.secondary">*/}
+          {/*    OU COM E-MAIL*/}
+          {/*  </Typography>*/}
+          {/*</Divider>*/}
 
-          <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1, width: "100%" }}>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="email"
-              label="E-mail"
-              name="email"
-              autoComplete="email"
-              autoFocus
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="password"
-              label="Senha"
-              type="password"
-              id="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <FormControlLabel
-              control={<Checkbox value="remember" color="primary" defaultChecked />}
-              label={<Typography variant="body2">Lembrar de mim</Typography>}
-            />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              size="large"
-              disabled={loading}
-              sx={{ mt: 2, mb: 2, py: 1.2 }}
-            >
-              Entrar
-            </Button>
+          {/*<Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1, width: "100%" }}>*/}
+          {/*  <TextField*/}
+          {/*    margin="normal"*/}
+          {/*    required*/}
+          {/*    fullWidth*/}
+          {/*    id="email"*/}
+          {/*    label="E-mail"*/}
+          {/*    name="email"*/}
+          {/*    autoComplete="email"*/}
+          {/*    autoFocus*/}
+          {/*    value={email}*/}
+          {/*    onChange={(e) => setEmail(e.target.value)}*/}
+          {/*  />*/}
+          {/*  <TextField*/}
+          {/*    margin="normal"*/}
+          {/*    required*/}
+          {/*    fullWidth*/}
+          {/*    name="password"*/}
+          {/*    label="Senha"*/}
+          {/*    type="password"*/}
+          {/*    id="password"*/}
+          {/*    autoComplete="current-password"*/}
+          {/*    value={password}*/}
+          {/*    onChange={(e) => setPassword(e.target.value)}*/}
+          {/*  />*/}
+          {/*  <FormControlLabel*/}
+          {/*    control={<Checkbox value="remember" color="primary" defaultChecked />}*/}
+          {/*    label={<Typography variant="body2">Lembrar de mim</Typography>}*/}
+          {/*  />*/}
+          {/*  <Button*/}
+          {/*    type="submit"*/}
+          {/*    fullWidth*/}
+          {/*    variant="contained"*/}
+          {/*    size="large"*/}
+          {/*    disabled={loading}*/}
+          {/*    sx={{ mt: 2, mb: 2, py: 1.2 }}*/}
+          {/*  >*/}
+          {/*    Entrar*/}
+          {/*  </Button>*/}
 
-            <Grid container justifyContent="space-between" sx={{ mt: 1 }}>
-              <Grid item>
-                <Link href="#" variant="body2" underline="hover">
-                  Esqueceu a senha?
-                </Link>
-              </Grid>
-              <Grid item>
-                <Link href="#" variant="body2" underline="hover">
-                  Criar conta
-                </Link>
-              </Grid>
-            </Grid>
+          {/*  <Grid container justifyContent="space-between" sx={{ mt: 1 }}>*/}
+          {/*    <Grid item>*/}
+          {/*      <Link href="#" variant="body2" underline="hover">*/}
+          {/*        Esqueceu a senha?*/}
+          {/*      </Link>*/}
+          {/*    </Grid>*/}
+          {/*    <Grid item>*/}
+          {/*      <Link href="#" variant="body2" underline="hover">*/}
+          {/*        Criar conta*/}
+          {/*      </Link>*/}
+          {/*    </Grid>*/}
+          {/*  </Grid>*/}
 
-            <Divider sx={{ my: 2.5 }} />
-          </Box>
+          {/*  <Divider sx={{ my: 2.5 }} />*/}
+          {/*</Box>*/}
         </Paper>
       </Container>
     </Box>

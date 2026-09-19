@@ -1,0 +1,89 @@
+name: Rollback de Produção
+
+on:
+  workflow_dispatch:
+    inputs:
+      strategy:
+        description: 'Escolha a estratégia de Rollback'
+        required: true
+        default: 'head_1'
+        type: choice
+        options:
+          - 'head_1' # Último commit estável (HEAD~1)
+          - 'manual' # Digitar o SHA do commit manualmente
+      commit_sha:
+        description: 'SHA do commit (Obrigatório apenas se escolheu a estratégia "manual")'
+        required: false
+        type: string
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - name: Executar Rollback via SSH na VM
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.ORACLE_HOST }}
+          username: ${{ secrets.ORACLE_USER }}
+          key: ${{ secrets.ORACLE_SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            cd /opt/projeto-aplicado
+
+            ESTRATEGIA="${{ github.event.inputs.strategy }}"
+            TARGET_SHA=""
+
+            if [ "$ESTRATEGIA" = "head_1" ]; then
+              echo "🔄 Buscando o último commit estável (HEAD~1)..."
+              
+              # Lê o SHA que está rodando atualmente no .env.prod
+              CURRENT_SHA=$(grep "^IMAGE_TAG=" .env.prod | cut -d'=' -f2)
+              
+              if [ -z "$CURRENT_SHA" ]; then
+                echo "❌ ERRO: Não foi possível identificar o SHA atual no .env.prod"
+                exit 1
+              fi
+
+              # Busca na lista do Docker a imagem de backend imediatamente anterior à atual
+              TARGET_SHA=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "praticas_de_mercado-backend" | grep -v "latest" | cut -d':' -f2 | grep -A 1 "$CURRENT_SHA" | tail -n 1)
+
+              if [ -z "$TARGET_SHA" ] || [ "$TARGET_SHA" = "$CURRENT_SHA" ]; then
+                echo "⚠️ Não encontramos o histórico ordenado no Docker local. Tentando ler via histórico do Git..."
+                # Alternativa: pega o segundo commit mais recente da pasta (se houver histórico git na VM)
+                TARGET_SHA=$(git rev-parse HEAD~1 2>/dev/null || "")
+              fi
+
+              if [ -z "$TARGET_SHA" ]; then
+                echo "❌ ERRO: Não foi possível determinar o commit anterior de forma automática."
+                echo "Por favor, execute o rollback usando a opção 'manual' e informe o SHA."
+                exit 1
+              fi
+
+            else
+              # Estratégia Manual
+              TARGET_SHA="${{ github.event.inputs.commit_sha }}"
+              if [ -z "$TARGET_SHA" ]; then
+                echo "❌ ERRO: Você selecionou a estratégia 'manual' mas não informou o SHA do commit!"
+                exit 1
+              fi
+            fi
+
+            echo "🚀 Iniciando rollback para o SHA de destino: $TARGET_SHA"
+
+            # 1. Substitui o IMAGE_TAG no .env.prod
+            sed -i '/^IMAGE_TAG=/d' .env.prod
+            echo "IMAGE_TAG=$TARGET_SHA" >> .env.prod
+
+            # 2. Garante o download das imagens (caso não estejam em cache)
+            docker compose -f docker-compose.prod.yml --env-file .env.prod pull
+
+            # 3. Força a recriação dos containers com a versão escolhida
+            docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --force-recreate
+
+            # 4. Executa o Health Check interno para validar a estabilidade
+            echo "Aguardando estabilização dos serviços..."
+            sleep 10
+            curl --fail http://127.0.0 || exit 1
+            
+            echo "✅ Rollback aplicado com sucesso total para a versão: $TARGET_SHA"
