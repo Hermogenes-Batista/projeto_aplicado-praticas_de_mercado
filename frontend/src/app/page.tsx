@@ -41,6 +41,7 @@ import {
   TodoItemsDocument,
   TodoItemsQuery,
 } from "@/graphql/generated";
+import AddIcon from "@mui/icons-material/Add";
 
 const drawerWidth = 240;
 
@@ -199,6 +200,14 @@ export default function Dashboard() {
           </Box>
           {user ? (
             <Stack direction="row" spacing={1.5} alignItems="center">
+              <Button
+                  component={NextLink}
+                  href="/todos/activities/new"
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                >
+                  Nova Atividade
+              </Button>
               <ThemeSelector />
               <Avatar
                 src={user.picture}
