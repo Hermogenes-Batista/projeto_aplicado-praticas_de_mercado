@@ -1,28 +1,36 @@
 import graphene
+from rest_framework.exceptions import ValidationError
 
 from ...models import Activity
 from ...serializers import ActivitySerializer
-from ..types import ActivityType
+from ..types import ActivityType, ItemInput
 from .helpers import authenticated_user, require_owned, serializer_errors
 
 
 class CreateActivity(graphene.Mutation):
     class Arguments:
         name = graphene.String(required=True)
+        items = graphene.List(graphene.NonNull(ItemInput))
 
     activity = graphene.Field(ActivityType)
     errors = graphene.List(graphene.String, required=True)
 
     @classmethod
-    def mutate(cls, root, info, name):
+    def mutate(cls, root, info, name, items=None):
         user = authenticated_user(info)
-        serializer = ActivitySerializer(data={"name": name}, context={"user": user})
+        items_data = items if items is not None else []
+
+        data = {"name": name, "items": items_data}
+        serializer = ActivitySerializer(data=data, context={"user": user})
         if not serializer.is_valid():
             return cls(activity=None, errors=serializer_errors(serializer))
-        return cls(
-            activity=serializer.save(created_by=user, is_resolved=False),
-            errors=[],
-        )
+
+        try:
+            activity = serializer.save(created_by=user, is_resolved=False)
+        except ValidationError:
+            return cls(activity=None, errors=serializer_errors(serializer))
+
+        return cls(activity=activity, errors=[])
 
 
 class UpdateActivity(graphene.Mutation):

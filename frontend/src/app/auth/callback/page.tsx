@@ -43,14 +43,15 @@ function CallbackHandler() {
         if (success) {
           router.push("/");
         } else {
-          setError("Não foi possível autenticar o código com o Django backend.");
+          setError(
+            "Não foi possível autenticar o código com o Django backend.",
+          );
         }
       })
       .catch((err) => {
         setError(err.message || "Erro durante o intercâmbio de autenticação.");
       });
   }, [searchParams, loginWithGoogleCode, router]);
-
 
   return (
     <Paper sx={{ p: 4, textAlign: "center", borderRadius: 3 }}>

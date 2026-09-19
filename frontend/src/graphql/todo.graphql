@@ -19,19 +19,49 @@ query TodoActivities {
     createdAt
     updatedAt
     isResolved
+    createdBy {
+      ...UserFields
+    }
+    items {
+      id
+      name
+      createdAt
+      updatedAt
+      isResolved
+      createdBy {
+        ...UserFields
+      }
+      activity {
+        id
+        name
+      }
+    }
   }
 }
 
-mutation CreateTodoActivity($name: String!) {
-  createActivity(name: $name) {
+mutation CreateTodoActivity($name: String!, $items: [ItemInput!]) {
+  createActivity(name: $name, items: $items) {
+    errors
     activity {
       id
       name
       createdAt
       updatedAt
       isResolved
+      createdBy {
+        ...UserFields
+      }
+      items {
+        id
+        name
+        isResolved
+        createdAt
+        updatedAt
+        createdBy {
+          ...UserFields
+        }
+      }
     }
-    errors
   }
 }
 

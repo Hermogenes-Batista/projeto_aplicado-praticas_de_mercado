@@ -36,7 +36,12 @@ export default function ConfirmDialog({
         <Button onClick={onClose} disabled={loading}>
           Cancelar
         </Button>
-        <Button onClick={onConfirm} color="error" variant="contained" disabled={loading}>
+        <Button
+          onClick={onConfirm}
+          color="error"
+          variant="contained"
+          disabled={loading}
+        >
           Excluir
         </Button>
       </DialogActions>

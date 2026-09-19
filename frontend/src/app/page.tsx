@@ -38,20 +38,23 @@ import ThemeSelector from "@/components/ThemeSelector";
 import {
   TodoActivitiesDocument,
   TodoActivitiesQuery,
-  TodoItemsDocument,
-  TodoItemsQuery,
 } from "@/graphql/generated";
 import AddIcon from "@mui/icons-material/Add";
 
 const drawerWidth = 240;
 
-type TodoItem = NonNullable<TodoItemsQuery["items"][number]>;
-type TodoCategory = NonNullable<TodoActivitiesQuery["activities"][number]>;
+type TodoActivities = NonNullable<TodoActivitiesQuery["activities"][number]>;
+type TodoItem = NonNullable<
+  Exclude<
+    Exclude<NonNullable<TodoActivitiesQuery>["activities"], null>[number],
+    null
+  >["items"]
+>[number];
 
 export default function Dashboard() {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [items, setItems] = React.useState<TodoItem[]>([]);
-  const [activities, setActivities] = React.useState<TodoCategory[]>([]);
+  const [activities, setActivities] = React.useState<TodoActivities[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const {
@@ -72,20 +75,24 @@ export default function Dashboard() {
     setLoading(true);
     setError(null);
     try {
-      const [itemsData, activitiesData] = await Promise.all([
-        requestAuthenticatedGraphQL<TodoItemsQuery>(TodoItemsDocument, {
-          isResolved: null,
-        }),
+      const [activitiesData] = await Promise.all([
         requestAuthenticatedGraphQL<TodoActivitiesQuery>(
           TodoActivitiesDocument,
         ),
       ]);
-      setItems(itemsData.items.filter((item): item is TodoItem => item !== null));
-      setActivities(
-        activitiesData.activities.filter(
-          (activity): activity is TodoCategory => activity !== null,
-        ),
+      const validActivities = activitiesData.activities.filter(
+        (activity): activity is TodoActivities => activity !== null,
       );
+
+      setItems(
+        validActivities.flatMap((activity) => {
+          return (
+            activity.items?.filter((item): item is TodoItem => item !== null) ??
+            []
+          );
+        }),
+      );
+      setActivities(validActivities);
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : "Falha ao carregar os TODOs.",
@@ -120,20 +127,19 @@ export default function Dashboard() {
     ? Math.round((resolvedCount / items.length) * 100)
     : 0;
   const pendingPercentage = items.length ? 100 - resolvedPercentage : 0;
-  const activityMetrics = activities
-    .map((activity) => {
-      const activityItems = items.filter(
-        (item) => item.activity?.id === activity.id,
-      );
-      const resolved = activityItems.filter((item) => item.isResolved).length;
-      return {
-        id: activity.id,
-        name: activity.name,
-        total: activityItems.length,
-        resolved,
-        pending: activityItems.length - resolved,
-      };
-    })
+  const activityMetrics = activities.map((activity) => {
+    const activityItems = items.filter(
+      (item) => item.activity?.id === activity.id,
+    );
+    const resolved = activityItems.filter((item) => item.isResolved).length;
+    return {
+      id: activity.id,
+      name: activity.name,
+      total: activityItems.length,
+      resolved,
+      pending: activityItems.length - resolved,
+    };
+  });
 
   const drawerContent = (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
@@ -159,7 +165,11 @@ export default function Dashboard() {
           </ListItemButton>
         </ListItem>
         <ListItem disablePadding>
-          <ListItemButton component={NextLink} href="/todos" sx={{ borderRadius: 2 }}>
+          <ListItemButton
+            component={NextLink}
+            href="/todos"
+            sx={{ borderRadius: 2 }}
+          >
             <ListItemIcon sx={{ minWidth: 40 }}>
               <ChecklistIcon />
             </ListItemIcon>
@@ -171,7 +181,13 @@ export default function Dashboard() {
   );
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", backgroundColor: "background.default" }}>
+    <Box
+      sx={{
+        display: "flex",
+        minHeight: "100vh",
+        backgroundColor: "background.default",
+      }}
+    >
       <AppBar
         position="fixed"
         sx={{
@@ -201,12 +217,12 @@ export default function Dashboard() {
           {user ? (
             <Stack direction="row" spacing={1.5} alignItems="center">
               <Button
-                  component={NextLink}
-                  href="/todos/activities/new"
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                >
-                  Nova Atividade
+                component={NextLink}
+                href="/todos/activities/new"
+                variant="contained"
+                startIcon={<AddIcon />}
+              >
+                Nova Atividade
               </Button>
               <ThemeSelector />
               <Avatar
@@ -247,7 +263,10 @@ export default function Dashboard() {
         </Toolbar>
       </AppBar>
 
-      <Box component="nav" sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}>
+      <Box
+        component="nav"
+        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
+      >
         <Drawer
           variant="temporary"
           open={mobileOpen}
@@ -255,7 +274,10 @@ export default function Dashboard() {
           ModalProps={{ keepMounted: true }}
           sx={{
             display: { xs: "block", sm: "none" },
-            "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth },
+            "& .MuiDrawer-paper": {
+              boxSizing: "border-box",
+              width: drawerWidth,
+            },
           }}
         >
           {drawerContent}
@@ -331,10 +353,7 @@ export default function Dashboard() {
                           Resumo global dos itens
                         </Typography>
                         <Stack spacing={1.5} sx={{ mt: 2 }}>
-                          <Stack
-                            direction="row"
-                            justifyContent="space-between"
-                          >
+                          <Stack direction="row" justifyContent="space-between">
                             <Typography variant="body2">
                               Resolvidos: <strong>{resolvedCount}</strong> (
                               {resolvedPercentage}%)
@@ -400,8 +419,9 @@ export default function Dashboard() {
                                 justifyContent="space-between"
                               >
                                 <Typography variant="body2">
-                                  Resolvidos: <strong>{activity.resolved}</strong>{" "}
-                                  ({resolvedPercentage}%)
+                                  Resolvidos:{" "}
+                                  <strong>{activity.resolved}</strong> (
+                                  {resolvedPercentage}%)
                                 </Typography>
                                 <Typography variant="body2">
                                   Pendentes: <strong>{activity.pending}</strong>{" "}
@@ -421,8 +441,12 @@ export default function Dashboard() {
                                   },
                                 }}
                               />
-                              <Typography variant="caption" color="text.secondary">
-                                Total de itens na atividade: {activity.total} item(ns)
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                Total de itens na atividade: {activity.total}{" "}
+                                item(ns)
                               </Typography>
                             </Stack>
                           </CardContent>

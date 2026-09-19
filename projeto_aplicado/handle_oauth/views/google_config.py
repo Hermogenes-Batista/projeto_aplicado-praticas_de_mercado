@@ -8,8 +8,8 @@ class GoogleConfigAPIView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        provider_config = getattr(
-            settings, "SOCIALACCOUNT_PROVIDERS", {}
-        ).get("google", {})
+        provider_config = getattr(settings, "SOCIALACCOUNT_PROVIDERS", {}).get(
+            "google", {}
+        )
         client_id = provider_config.get("APP", {}).get("client_id", "")
         return Response({"client_id": client_id})

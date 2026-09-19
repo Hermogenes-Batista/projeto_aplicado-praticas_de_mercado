@@ -20,11 +20,7 @@
             }
           ],
           "description": "Directs the executor to include this field or fragment only when the `if` argument is true.",
-          "locations": [
-            "FIELD",
-            "FRAGMENT_SPREAD",
-            "INLINE_FRAGMENT"
-          ],
+          "locations": ["FIELD", "FRAGMENT_SPREAD", "INLINE_FRAGMENT"],
           "name": "include"
         },
         {
@@ -45,11 +41,7 @@
             }
           ],
           "description": "Directs the executor to skip this field or fragment when the `if` argument is true.",
-          "locations": [
-            "FIELD",
-            "FRAGMENT_SPREAD",
-            "INLINE_FRAGMENT"
-          ],
+          "locations": ["FIELD", "FRAGMENT_SPREAD", "INLINE_FRAGMENT"],
           "name": "skip"
         },
         {
@@ -93,17 +85,13 @@
             }
           ],
           "description": "Exposes a URL that specifies the behavior of this scalar.",
-          "locations": [
-            "SCALAR"
-          ],
+          "locations": ["SCALAR"],
           "name": "specifiedBy"
         },
         {
           "args": [],
           "description": "Indicates an Input Object is a OneOf Input Object.",
-          "locations": [
-            "INPUT_OBJECT"
-          ],
+          "locations": ["INPUT_OBJECT"],
           "name": "oneOf"
         }
       ],
@@ -469,6 +457,30 @@
                   "ofType": null
                 }
               }
+            },
+            {
+              "args": [],
+              "deprecationReason": null,
+              "description": null,
+              "isDeprecated": false,
+              "name": "items",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "LIST",
+                  "name": null,
+                  "ofType": {
+                    "kind": "NON_NULL",
+                    "name": null,
+                    "ofType": {
+                      "kind": "OBJECT",
+                      "name": "ItemType",
+                      "ofType": null
+                    }
+                  }
+                }
+              }
             }
           ],
           "inputFields": null,
@@ -590,6 +602,24 @@
           "fields": [
             {
               "args": [
+                {
+                  "defaultValue": null,
+                  "description": null,
+                  "name": "items",
+                  "type": {
+                    "kind": "LIST",
+                    "name": null,
+                    "ofType": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "INPUT_OBJECT",
+                        "name": "ItemInput",
+                        "ofType": null
+                      }
+                    }
+                  }
+                },
                 {
                   "defaultValue": null,
                   "description": null,
@@ -1068,6 +1098,41 @@
           "interfaces": [],
           "kind": "OBJECT",
           "name": "CreateActivity",
+          "possibleTypes": null
+        },
+        {
+          "description": null,
+          "enumValues": null,
+          "fields": null,
+          "inputFields": [
+            {
+              "defaultValue": null,
+              "description": null,
+              "name": "name",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "defaultValue": null,
+              "description": null,
+              "name": "isResolved",
+              "type": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
+            }
+          ],
+          "interfaces": null,
+          "kind": "INPUT_OBJECT",
+          "name": "ItemInput",
           "possibleTypes": null
         },
         {

@@ -36,10 +36,10 @@ jobs:
 
             if [ "$ESTRATEGIA" = "head_1" ]; then
               echo "🔄 Buscando o último commit estável (HEAD~1)..."
-              
+
               # Lê o SHA que está rodando atualmente no .env.prod
               CURRENT_SHA=$(grep "^IMAGE_TAG=" .env.prod | cut -d'=' -f2)
-              
+
               if [ -z "$CURRENT_SHA" ]; then
                 echo "❌ ERRO: Não foi possível identificar o SHA atual no .env.prod"
                 exit 1
@@ -85,5 +85,5 @@ jobs:
             echo "Aguardando estabilização dos serviços..."
             sleep 10
             curl --fail http://127.0.0 || exit 1
-            
+
             echo "✅ Rollback aplicado com sucesso total para a versão: $TARGET_SHA"

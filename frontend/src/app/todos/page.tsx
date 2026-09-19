@@ -61,8 +61,14 @@ import {
   UpdateTodoItemMutation,
 } from "@/graphql/generated";
 
-type Activity = NonNullable<TodoActivitiesQuery["activities"][number]>;
-type TodoItem = NonNullable<TodoItemsQuery["items"][number]>;
+type TodoActivities = NonNullable<TodoActivitiesQuery["activities"][number]>;
+type TodoItem = NonNullable<
+  Exclude<
+    Exclude<NonNullable<TodoActivitiesQuery>["activities"], null>[number],
+    null
+  >["items"]
+>[number];
+
 type DialogMode = "create" | "edit";
 type SortDirection = "none" | "asc" | "desc";
 
@@ -79,9 +85,9 @@ type DeleteTarget =
   | null;
 
 export default function TodosPage() {
-  const { requestAuthenticatedGraphQL } = useAuth();
+  const { requestAuthenticatedGraphQL, token } = useAuth();
   const [items, setItems] = useState<TodoItem[]>([]);
-  const [activities, setActivities] = useState<Activity[]>([]);
+  const [activities, setActivities] = useState<TodoActivities[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [itemForm, setItemForm] = useState<ItemForm>({
@@ -89,50 +95,58 @@ export default function TodosPage() {
     activityId: "",
     isResolved: false,
   });
-  const [ActivityName, setActivityName] = useState("");
+  const [activityName, setActivityName] = useState("");
   const [activityId, setActivityId] = useState<string | undefined>();
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
-  const [ActivityDialogOpen, setActivityDialogOpen] = useState(false);
+  const [activityDialogOpen, setActivityDialogOpen] = useState(false);
   const [itemDialogMode, setItemDialogMode] = useState<DialogMode>("create");
-  const [ActivityDialogMode, setActivityDialogMode] =
+  const [activityDialogMode, setActivityDialogMode] =
     useState<DialogMode>("create");
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [createdAtSort, setCreatedAtSort] =
-    useState<SortDirection>("asc");
-  const [selectedActivityIds, setSelectedActivityIds] = useState<string[] | null>(
-    null,
-  );
-  const [ActivityFilterAnchor, setActivityFilterAnchor] =
+  const [createdAtSort, setCreatedAtSort] = useState<SortDirection>("asc");
+  const [selectedActivityIds, setSelectedActivityIds] = useState<
+    string[] | null
+  >(null);
+  const [activityFilterAnchor, setActivityFilterAnchor] =
     useState<null | HTMLElement>(null);
+
+  const [newActivityItems, setNewActivityItems] = useState<
+    Array<{ name: string; isResolved: boolean }>
+  >([]);
+  const [tempItemName, setTempItemName] = useState("");
 
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [itemsData, activitiesData] = await Promise.all([
-        requestAuthenticatedGraphQL<TodoItemsQuery>(TodoItemsDocument, {
-          isResolved: null,
-        }),
+      const [activitiesData] = await Promise.all([
         requestAuthenticatedGraphQL<TodoActivitiesQuery>(
           TodoActivitiesDocument,
         ),
       ]);
+      const validActivities = activitiesData.activities.filter(
+        (activity): activity is TodoActivities => activity !== null,
+      );
+
       setItems(
-        itemsData.items.filter((item): item is TodoItem => item !== null),
+        validActivities.flatMap((activity) => {
+          return (
+            activity.items?.filter((item): item is TodoItem => item !== null) ??
+            []
+          );
+        }),
       );
-      setActivities(
-        activitiesData.activities.filter(
-          (activity): activity is Activity => activity !== null,
-        ),
-      );
+      setActivities(validActivities);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Falha ao carregar os TODOs.");
+      setError(
+        cause instanceof Error ? cause.message : "Falha ao carregar os TODOs.",
+      );
     } finally {
       setLoading(false);
     }
-  }, [requestAuthenticatedGraphQL]);
+  }, [requestAuthenticatedGraphQL, token]);
 
   useEffect(() => {
     void loadData();
@@ -166,7 +180,7 @@ export default function TodosPage() {
           {
             id: itemForm.id,
             name: itemForm.name.trim(),
-            ActivityId: itemForm.activityId,
+            activityId: itemForm.activityId,
             isResolved: itemForm.isResolved,
           },
         );
@@ -176,22 +190,30 @@ export default function TodosPage() {
       setItemDialogOpen(false);
       await loadData();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Falha ao salvar o item.");
+      setError(
+        cause instanceof Error ? cause.message : "Falha ao salvar o item.",
+      );
     } finally {
       setSaving(false);
     }
   };
 
   const saveActivity = async () => {
-    if (!ActivityName.trim()) return;
+    console.log("Chamou aqui? saveActivity");
+    if (!activityName.trim()) return;
     setSaving(true);
     setError(null);
     try {
-      if (ActivityDialogMode === "create") {
+      if (activityDialogMode === "create") {
+        // Envia o nome da atividade e os itens criados nela em um único request
+        console.log({ newActivityItems });
         const data =
           await requestAuthenticatedGraphQL<CreateTodoActivityMutation>(
             CreateTodoActivityDocument,
-            { name: ActivityName.trim() },
+            {
+              name: activityName.trim(),
+              items: newActivityItems, // Passa a lista local criada no formulário aninhado
+            },
           );
         const errors = mutationErrors(data.createActivity?.errors);
         if (errors) throw new Error(errors);
@@ -199,7 +221,7 @@ export default function TodosPage() {
         const data =
           await requestAuthenticatedGraphQL<UpdateTodoActivityMutation>(
             UpdateTodoActivityDocument,
-            { id: activityId, name: ActivityName.trim() },
+            { id: activityId, name: activityName.trim() },
           );
         const errors = mutationErrors(data.updateActivity?.errors);
         if (errors) throw new Error(errors);
@@ -230,11 +252,10 @@ export default function TodosPage() {
   };
 
   const deleteActivity = async (id: string) => {
-    const data =
-      await requestAuthenticatedGraphQL<DeleteTodoActivityMutation>(
-        DeleteTodoActivityDocument,
-        { id },
-      );
+    const data = await requestAuthenticatedGraphQL<DeleteTodoActivityMutation>(
+      DeleteTodoActivityDocument,
+      { id },
+    );
     const errors = mutationErrors(data.deleteActivity?.errors);
     if (!data.deleteActivity?.success || errors) {
       setError(errors || "Falha ao excluir a atividade.");
@@ -292,7 +313,7 @@ export default function TodosPage() {
     }
   };
 
-  const toggleActivityResolved = async (activity: Activity) => {
+  const toggleActivityResolved = async (activity: TodoActivities) => {
     const nextResolved = !activity.isResolved;
     setSaving(true);
     setError(null);
@@ -337,9 +358,11 @@ export default function TodosPage() {
     setItemDialogOpen(true);
   };
 
-  const openActivity = (Activity?: Activity) => {
+  const openActivity = (Activity?: TodoActivities) => {
     setActivityId(Activity?.id);
     setActivityName(Activity?.name || "");
+    setNewActivityItems([]);
+    setTempItemName("");
     setActivityDialogMode(Activity ? "edit" : "create");
     setActivityDialogOpen(true);
   };
@@ -365,20 +388,22 @@ export default function TodosPage() {
       const ActivityMatchesSearch =
         !normalizedSearchTerm ||
         activity.name.toLocaleLowerCase("pt-BR").includes(normalizedSearchTerm);
-      const ActivityMatchesFilter =
+      const activityMatchesFilter =
         selectedActivityIds === null ||
         selectedActivityIds.includes(activity.id);
-      const ActivityItems = items.filter(
+      const activityItems = items.filter(
         (item) => item.activity?.id === activity.id,
       );
       return {
         activity,
-        items: ActivityItems.sort(compareBySortOption),
-        visible: ActivityMatchesSearch && ActivityMatchesFilter,
+        items: activityItems.sort(compareBySortOption),
+        visible: ActivityMatchesSearch && activityMatchesFilter,
       };
     })
     .filter(({ visible }) => visible)
-    .sort((first, second) => compareBySortOption(first.activity, second.activity));
+    .sort((first, second) =>
+      compareBySortOption(first.activity, second.activity),
+    );
   const allActivityIds = activities.map((activity) => activity.id);
   const selectedActivities =
     selectedActivityIds === null
@@ -386,7 +411,7 @@ export default function TodosPage() {
       : activities.filter((activity) =>
           selectedActivityIds.includes(activity.id),
         );
-  const ActivityFilterLabel =
+  const activityFilterLabel =
     selectedActivityIds === null
       ? "Todas as atividades"
       : selectedActivities.length === 0
@@ -419,7 +444,11 @@ export default function TodosPage() {
                 size="small"
                 startIcon={<DeleteIcon />}
                 onClick={() =>
-                  setDeleteTarget({ type: "item", id: item.id, name: item.name })
+                  setDeleteTarget({
+                    type: "item",
+                    id: item.id,
+                    name: item.name,
+                  })
                 }
               >
                 Excluir
@@ -502,7 +531,9 @@ export default function TodosPage() {
                   fullWidth
                   size="small"
                   InputProps={{
-                    startAdornment: <SearchIcon color="action" sx={{ mr: 1 }} />,
+                    startAdornment: (
+                      <SearchIcon color="action" sx={{ mr: 1 }} />
+                    ),
                   }}
                 />
                 <Button
@@ -518,18 +549,22 @@ export default function TodosPage() {
                     textTransform: "none",
                   }}
                 >
-                  {ActivityFilterLabel}
+                  {activityFilterLabel}
                 </Button>
                 <Menu
-                  anchorEl={ActivityFilterAnchor}
-                  open={Boolean(ActivityFilterAnchor)}
+                  anchorEl={activityFilterAnchor}
+                  open={Boolean(activityFilterAnchor)}
                   onClose={() => setActivityFilterAnchor(null)}
-                  MenuListProps={{ "aria-labelledby": "Activity-filter-button" }}
+                  MenuListProps={{
+                    "aria-labelledby": "Activity-filter-button",
+                  }}
                   PaperProps={{ sx: { minWidth: 280, maxHeight: 420 } }}
                 >
                   <MenuItem
                     onClick={() => setSelectedActivityIds(null)}
-                    sx={{ fontWeight: selectedActivityIds === null ? 700 : 400 }}
+                    sx={{
+                      fontWeight: selectedActivityIds === null ? 700 : 400,
+                    }}
                   >
                     Todas as atividades
                   </MenuItem>
@@ -567,8 +602,7 @@ export default function TodosPage() {
                     onClick={() => setSelectedActivityIds([])}
                     sx={{
                       color: "error.main",
-                      fontWeight:
-                        selectedActivityIds?.length === 0 ? 700 : 400,
+                      fontWeight: selectedActivityIds?.length === 0 ? 700 : 400,
                     }}
                   >
                     Limpar atividades
@@ -622,7 +656,7 @@ export default function TodosPage() {
               </Stack>
             </CardContent>
           </Card>
-          {filteredActivities.map(({ activity, items: ActivityItems }) => (
+          {filteredActivities.map(({ activity, items: activityItems }) => (
             <Card key={activity.id}>
               <CardContent>
                 <Stack
@@ -636,7 +670,7 @@ export default function TodosPage() {
                       {activity.name}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {ActivityItems.length} item(ns)
+                      {activityItems.length} item(ns)
                     </Typography>
                   </Box>
                   <Stack direction="row" spacing={1}>
@@ -651,7 +685,7 @@ export default function TodosPage() {
                         )
                       }
                       onClick={() => void toggleActivityResolved(activity)}
-                      disabled={saving || !ActivityItems.length}
+                      disabled={saving || !activityItems.length}
                     >
                       {activity.isResolved ? "Concluída" : "Concluir atividade"}
                     </Button>
@@ -688,8 +722,8 @@ export default function TodosPage() {
                   </Stack>
                 </Stack>
                 <Divider sx={{ my: 2 }} />
-                {ActivityItems.length ? (
-                  <List disablePadding>{ActivityItems.map(renderItem)}</List>
+                {activityItems.length ? (
+                  <List disablePadding>{activityItems.map(renderItem)}</List>
                 ) : (
                   <Typography color="text.secondary" sx={{ py: 1 }}>
                     Nenhum TODO nesta atividade. Adicione o primeiro item acima.
@@ -699,15 +733,16 @@ export default function TodosPage() {
             </Card>
           ))}
 
-          {!filteredActivities.length && (activities.length > 0 || items.length > 0) && (
-            <Card>
-              <CardContent>
-                <Typography color="text.secondary">
-                  Nenhum resultado encontrado.
-                </Typography>
-              </CardContent>
-            </Card>
-          )}
+          {!filteredActivities.length &&
+            (activities.length > 0 || items.length > 0) && (
+              <Card>
+                <CardContent>
+                  <Typography color="text.secondary">
+                    Nenhum resultado encontrado.
+                  </Typography>
+                </CardContent>
+              </Card>
+            )}
 
           {!activities.length && !items.length && (
             <Card>
@@ -722,66 +757,93 @@ export default function TodosPage() {
       )}
 
       <Dialog
-        open={itemDialogOpen}
-        onClose={() => setItemDialogOpen(false)}
+        open={activityDialogOpen}
+        onClose={() => setActivityDialogOpen(false)}
         fullWidth
         maxWidth="sm"
       >
         <DialogTitle>
-          {itemDialogMode === "create" ? "Novo TODO" : "Editar TODO"}
+          {activityDialogMode === "create"
+            ? "Nova atividade"
+            : "Editar atividade"}
         </DialogTitle>
         <DialogContent>
-          <Stack spacing={2} sx={{ pt: 1 }}>
+          <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
-              label="Nome"
-              value={itemForm.name}
-              onChange={(event) =>
-                setItemForm((current) => ({
-                  ...current,
-                  name: event.target.value,
-                }))
-              }
+              label="Nome da Atividade"
+              value={activityName}
+              onChange={(event) => setActivityName(event.target.value)}
               autoFocus
               fullWidth
             />
-            <FormControl fullWidth>
-              <InputLabel id="todo-Activity-label">Atividade</InputLabel>
-              <Select
-                labelId="todo-Activity-label"
-                label="Atividade"
-                value={itemForm.activityId}
-                onChange={(event) =>
-                  setItemForm((current) => ({
-                    ...current,
-                    ActivityId: event.target.value,
-                  }))
-                }
-              >
-                {activities.map((activity) => (
-                  <MenuItem key={activity.id} value={activity.id}>
-                    {activity.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <label>
-              <Checkbox
-                checked={itemForm.isResolved}
-                onChange={(event) =>
-                  setItemForm((current) => ({
-                    ...current,
-                    isResolved: event.target.checked,
-                  }))
-                }
-              />
-              Resolvido
-            </label>
+
+            {/* Apenas exibe o formulário de itens se estiver criando uma nova atividade */}
+            {activityDialogMode === "create" && (
+              <>
+                <Divider sx={{ my: 1 }} />
+                <Typography variant="subtitle1" fontWeight={600}>
+                  Adicionar Itens Iniciais (Opcional)
+                </Typography>
+
+                <Stack direction="row" spacing={1}>
+                  <TextField
+                    label="Nome do item"
+                    value={tempItemName}
+                    onChange={(e) => setTempItemName(e.target.value)}
+                    fullWidth
+                    size="small"
+                  />
+                  <Button
+                    variant="outlined"
+                    startIcon={<AddIcon />}
+                    onClick={() => {
+                      if (!tempItemName.trim()) return;
+                      setNewActivityItems((prev) => [
+                        ...prev,
+                        { name: tempItemName.trim(), isResolved: false },
+                      ]);
+                      setTempItemName(""); // Limpa o campo do item
+                    }}
+                  >
+                    Adicionar
+                  </Button>
+                </Stack>
+
+                {/* Lista de itens temporários adicionados que serão enviados no request */}
+                <List dense>
+                  {newActivityItems.map((item, index) => (
+                    <ListItem
+                      key={index}
+                      secondaryAction={
+                        <Button
+                          color="error"
+                          size="small"
+                          onClick={() =>
+                            setNewActivityItems((prev) =>
+                              prev.filter((_, i) => i !== index),
+                            )
+                          }
+                        >
+                          Remover
+                        </Button>
+                      }
+                    >
+                      <ListItemText primary={item.name} />
+                    </ListItem>
+                  ))}
+                </List>
+              </>
+            )}
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setItemDialogOpen(false)}>Cancelar</Button>
-          <Button onClick={() => void saveItem()} variant="contained" disabled={saving}>
-            Salvar
+          <Button onClick={() => setActivityDialogOpen(false)}>Cancelar</Button>
+          <Button
+            onClick={() => void saveActivity()}
+            variant="contained"
+            disabled={saving}
+          >
+            Salvar Atividade
           </Button>
         </DialogActions>
       </Dialog>
@@ -811,18 +873,20 @@ export default function TodosPage() {
       />
 
       <Dialog
-        open={ActivityDialogOpen}
+        open={activityDialogOpen}
         onClose={() => setActivityDialogOpen(false)}
         fullWidth
         maxWidth="sm"
       >
         <DialogTitle>
-          {ActivityDialogMode === "create" ? "Nova atividade" : "Editar atividade"}
+          {activityDialogMode === "create"
+            ? "Nova atividade"
+            : "Editar atividade"}
         </DialogTitle>
         <DialogContent>
           <TextField
             label="Nome"
-            value={ActivityName}
+            value={activityName}
             onChange={(event) => setActivityName(event.target.value)}
             autoFocus
             fullWidth

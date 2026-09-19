@@ -60,7 +60,9 @@ class GoogleLoginMutation(graphene.Mutation):
             details = user_info.data.get("error", "Falha na autenticação Google.")
             return cls(success=False, errors=[str(details)])
         if not user_info or not user_info.get("email"):
-            return cls(success=False, errors=["O e-mail do perfil Google não foi obtido."])
+            return cls(
+                success=False, errors=["O e-mail do perfil Google não foi obtido."]
+            )
 
         user = view._get_or_create_user(user_info)
         view._link_social_account(user, user_info)

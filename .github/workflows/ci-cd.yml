@@ -21,23 +21,23 @@ jobs:
       - name: Validar variáveis de ambiente do Next.js
         run: |
           URL="${{ secrets.NEXT_PUBLIC_API_URL }}"
-          
+
           if [ -z "$URL" ]; then
             echo "❌ ERRO CRÍTICO: A variável 'NEXT_PUBLIC_API_URL' não está definida no ambiente 'prod' do GitHub!"
             exit 1
           fi
-          
+
           if [[ ! "$URL" =~ ^https:// ]]; then
             echo "❌ ERRO CRÍTICO: A URL da API deve começar obrigatoriamente com 'https://' em produção!"
             echo "Valor atual: $URL"
             exit 1
           fi
-          
+
           if [[ "$URL" == *"localhost"* ]]; then
             echo "❌ ERRO CRÍTICO: A URL da API de produção não pode conter 'localhost'!"
             exit 1
           fi
-          
+
           echo "✅ Variável NEXT_PUBLIC_API_URL validada com sucesso: $URL"
 
       - name: Configurar Docker Buildx
@@ -122,15 +122,15 @@ jobs:
             echo "Executando rotação do histórico de imagens (Back/Front)..."
             docker image rm $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "praticas_de_mercado-backend" | grep -v "latest" | tail -n +4) 2>/dev/null || true
             docker image rm $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "praticas_de_mercado-frontend" | grep -v "latest" | tail -n +4) 2>/dev/null || true
-            
+
             # Limpa camadas intermediárias sem tag (<none>)
             docker image prune -f
 
             # 6. Aguardar estabilização e rodar Health Check interno
             echo "Aguardando estabilização dos serviços..."
             sleep 15
-            
+
             echo "Executando Health Check interno..."
             curl --fail http://127.0.0 || exit 1
-            
+
             echo "Deploy finalizado com sucesso!"

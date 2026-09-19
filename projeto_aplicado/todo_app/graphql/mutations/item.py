@@ -1,6 +1,6 @@
 import graphene
 
-from ...models import Activity, Item
+from ...models import Item
 from ...serializers import ItemSerializer
 from ..types import ItemType
 from .helpers import authenticated_user, require_owned, serializer_errors

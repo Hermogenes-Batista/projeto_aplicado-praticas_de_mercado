@@ -1,11 +1,6 @@
 query CurrentUser {
   me {
-    id
-    username
-    email
-    firstName
-    lastName
-    isStaff
+    ...UserFields
   }
 }
 
@@ -16,12 +11,7 @@ mutation AuthenticateUser($username: String!, $password: String!) {
     access
     refresh
     user {
-      id
-      username
-      email
-      firstName
-      lastName
-      isStaff
+      ...UserFields
     }
   }
 }
@@ -67,12 +57,16 @@ mutation AuthenticateGoogle(
     access
     refresh
     user {
-      id
-      username
-      email
-      firstName
-      lastName
-      isStaff
+      ...UserFields
     }
   }
+}
+
+fragment UserFields on UserType {
+  id
+  username
+  email
+  firstName
+  lastName
+  isStaff
 }

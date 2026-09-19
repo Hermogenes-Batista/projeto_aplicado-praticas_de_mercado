@@ -9,7 +9,9 @@ interface ThemeContextValue {
   setThemeMode: (mode: ThemeMode) => void;
 }
 
-const ThemeContext = React.createContext<ThemeContextValue | undefined>(undefined);
+const ThemeContext = React.createContext<ThemeContextValue | undefined>(
+  undefined,
+);
 const THEME_STORAGE_KEY = "app_theme";
 
 export function ThemeModeProvider({ children }: { children: React.ReactNode }) {
@@ -17,7 +19,11 @@ export function ThemeModeProvider({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
-    if (storedTheme === "light" || storedTheme === "dark" || storedTheme === "pink") {
+    if (
+      storedTheme === "light" ||
+      storedTheme === "dark" ||
+      storedTheme === "pink"
+    ) {
       setThemeModeState(storedTheme);
     }
   }, []);

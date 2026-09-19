@@ -32,18 +32,16 @@ import NextLink from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import {
-  CreateTodoActivityDocument,
-  CreateTodoActivityMutation,
   CompleteTodoActivityDocument,
   CompleteTodoActivityMutation,
+  CreateTodoActivityDocument,
+  CreateTodoActivityMutation,
   CreateTodoItemDocument,
   CreateTodoItemMutation,
   DeleteTodoItemDocument,
   DeleteTodoItemMutation,
   TodoActivitiesDocument,
   TodoActivitiesQuery,
-  TodoItemsDocument,
-  TodoItemsQuery,
   UpdateTodoActivityDocument,
   UpdateTodoActivityMutation,
   UpdateTodoItemDocument,
@@ -51,7 +49,12 @@ import {
 } from "@/graphql/generated";
 
 type Activity = NonNullable<TodoActivitiesQuery["activities"][number]>;
-type TodoItem = NonNullable<TodoItemsQuery["items"][number]>;
+type TodoItem = NonNullable<
+  Exclude<
+    Exclude<NonNullable<TodoActivitiesQuery>["activities"], null>[number],
+    null
+  >["items"]
+>[number];
 
 export default function ActivityTodosPage() {
   const params = useParams<{ activityId: string }>();
@@ -84,13 +87,10 @@ export default function ActivityTodosPage() {
     setLoading(true);
     setError(null);
     try {
-      const [activitiesData, itemsData] = await Promise.all([
+      const [activitiesData] = await Promise.all([
         requestAuthenticatedGraphQL<TodoActivitiesQuery>(
           TodoActivitiesDocument,
         ),
-        requestAuthenticatedGraphQL<TodoItemsQuery>(TodoItemsDocument, {
-          isResolved: null,
-        }),
       ]);
       const selectedActivity = activitiesData.activities.find(
         (item): item is Activity => item?.id === activityId,
@@ -100,14 +100,13 @@ export default function ActivityTodosPage() {
       }
       setActivity(selectedActivity);
       setActivityName(selectedActivity.name);
-      setItems(
-        itemsData.items.filter(
-          (item): item is TodoItem =>
-            item?.activity?.id === selectedActivity.id,
-        ),
-      );
+      setItems(selectedActivity.items);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Falha ao carregar a atividade.");
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Falha ao carregar a atividade.",
+      );
     } finally {
       setLoading(false);
     }
@@ -123,31 +122,21 @@ export default function ActivityTodosPage() {
     setError(null);
     try {
       if (isNewActivity) {
+        const variables = {
+          name: activityName.trim(),
+          items: pendingItems.map((itemName) => {
+            return { name: itemName, isResolved: false };
+          }),
+        };
         const activityData =
           await requestAuthenticatedGraphQL<CreateTodoActivityMutation>(
             CreateTodoActivityDocument,
-            { name: activityName.trim() },
+            variables,
           );
         const activityErrors = errorsFrom(activityData.createActivity?.errors);
         const createdActivity = activityData.createActivity?.activity;
         if (activityErrors || !createdActivity) {
           throw new Error(activityErrors || "Falha ao criar a atividade.");
-        }
-
-        for (const itemName of pendingItems) {
-          const itemData =
-            await requestAuthenticatedGraphQL<CreateTodoItemMutation>(
-              CreateTodoItemDocument,
-              {
-                name: itemName,
-                activityId: createdActivity.id,
-                isResolved: false,
-              },
-            );
-          const itemErrors = errorsFrom(itemData.createItem?.errors);
-          if (itemErrors || !itemData.createItem?.item) {
-            throw new Error(itemErrors || "Falha ao criar um dos itens.");
-          }
         }
 
         router.push(`/todos/activities/${createdActivity.id}`);
@@ -164,7 +153,9 @@ export default function ActivityTodosPage() {
       setEditingActivityName(false);
       await loadActivity();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Falha ao salvar a atividade.");
+      setError(
+        cause instanceof Error ? cause.message : "Falha ao salvar a atividade.",
+      );
     } finally {
       setSaving(false);
     }
@@ -194,7 +185,9 @@ export default function ActivityTodosPage() {
       setNewItemName("");
       await loadActivity();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Falha ao adicionar o item.");
+      setError(
+        cause instanceof Error ? cause.message : "Falha ao adicionar o item.",
+      );
     } finally {
       setSaving(false);
     }
@@ -231,7 +224,9 @@ export default function ActivityTodosPage() {
             : currentItem,
         ),
       );
-      setError(cause instanceof Error ? cause.message : "Falha ao atualizar o item.");
+      setError(
+        cause instanceof Error ? cause.message : "Falha ao atualizar o item.",
+      );
     } finally {
       setSaving(false);
     }
@@ -280,7 +275,9 @@ export default function ActivityTodosPage() {
       setEditingItemId(null);
       await loadActivity();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Falha ao editar o item.");
+      setError(
+        cause instanceof Error ? cause.message : "Falha ao editar o item.",
+      );
     } finally {
       setSaving(false);
     }
@@ -301,7 +298,9 @@ export default function ActivityTodosPage() {
       await loadActivity();
       setDeleteItemId(null);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Falha ao excluir o item.");
+      setError(
+        cause instanceof Error ? cause.message : "Falha ao excluir o item.",
+      );
     } finally {
       setSaving(false);
     }
@@ -318,7 +317,11 @@ export default function ActivityTodosPage() {
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
       <Stack direction="row" justifyContent="space-between" sx={{ mb: 3 }}>
-        <Button component={NextLink} href="/todos" startIcon={<ArrowBackIcon />}>
+        <Button
+          component={NextLink}
+          href="/todos"
+          startIcon={<ArrowBackIcon />}
+        >
           Voltar para TODOs
         </Button>
         <Button
@@ -389,7 +392,12 @@ export default function ActivityTodosPage() {
                   </Stack>
                 </Stack>
               ) : (
-                <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 1 }}>
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  spacing={1}
+                  sx={{ mt: 1 }}
+                >
                   <Typography variant="h5" fontWeight={700}>
                     {activity!.name}
                   </Typography>
@@ -510,7 +518,9 @@ export default function ActivityTodosPage() {
                     {editingItemId === item.id ? (
                       <TextField
                         value={editingItemName}
-                        onChange={(event) => setEditingItemName(event.target.value)}
+                        onChange={(event) =>
+                          setEditingItemName(event.target.value)
+                        }
                         onKeyDown={(event) => {
                           if (event.key === "Enter") void saveItem(item);
                         }}
