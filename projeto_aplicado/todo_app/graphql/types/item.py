@@ -1,8 +1,6 @@
-import graphene
 from graphene_django import DjangoObjectType
 
 from ...models import Item
-from .activity import ActivityType
 
 
 class ItemType(DjangoObjectType):

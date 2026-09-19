@@ -5,10 +5,7 @@ from .user import urlpatterns as user_urlpatterns
 
 app_name = "handle_oauth"
 urlpatterns = (
-    config_urlpatterns
-    + google_urlpatterns
-    + user_urlpatterns
-    + logout_urlpatterns
+    config_urlpatterns + google_urlpatterns + user_urlpatterns + logout_urlpatterns
 )
 
 __all__ = ["app_name", "urlpatterns"]

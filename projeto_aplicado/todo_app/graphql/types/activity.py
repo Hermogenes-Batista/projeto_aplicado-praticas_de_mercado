@@ -13,4 +13,5 @@ class ActivityType(DjangoObjectType):
             "created_at",
             "updated_at",
             "created_by",
+            "items",
         )

@@ -7,11 +7,14 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from ..cookies import REFRESH_COOKIE, clear_auth_cookies
 
+
 class LogoutAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        refresh_token = request.data.get("refresh") or request.COOKIES.get(REFRESH_COOKIE)
+        refresh_token = request.data.get("refresh") or request.COOKIES.get(
+            REFRESH_COOKIE
+        )
         if refresh_token:
             try:
                 RefreshToken(refresh_token).blacklist()

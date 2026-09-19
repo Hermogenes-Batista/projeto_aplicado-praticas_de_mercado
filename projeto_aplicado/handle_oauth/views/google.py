@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from ..cookies import set_auth_cookies
+
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
@@ -21,9 +22,7 @@ class GoogleAuthAPIView(APIView):
         data = request.data
         id_token = data.get("id_token") or data.get("credential")
         code = data.get("code")
-        redirect_uri = data.get(
-            "redirect_uri", "http://localhost:3000/auth/callback"
-        )
+        redirect_uri = data.get("redirect_uri", "http://localhost:3000/auth/callback")
 
         user_info = self._get_user_info(id_token, code, redirect_uri)
         if isinstance(user_info, Response):
@@ -71,9 +70,7 @@ class GoogleAuthAPIView(APIView):
                 timeout=10,
             )
             if response.status_code != 200:
-                logger.warning(
-                    "Failed to validate Google ID token: %s", response.text
-                )
+                logger.warning("Failed to validate Google ID token: %s", response.text)
                 return Response(
                     {
                         "error": "The Google token is invalid or expired.",
@@ -96,9 +93,9 @@ class GoogleAuthAPIView(APIView):
             )
 
     def _get_user_info_from_code(self, code, redirect_uri):
-        provider_config = getattr(
-            settings, "SOCIALACCOUNT_PROVIDERS", {}
-        ).get("google", {})
+        provider_config = getattr(settings, "SOCIALACCOUNT_PROVIDERS", {}).get(
+            "google", {}
+        )
         app_config = provider_config.get("APP", {})
         try:
             token_response = requests.post(
@@ -149,8 +146,7 @@ class GoogleAuthAPIView(APIView):
             "given_name": profile.get("given_name", ""),
             "family_name": profile.get("family_name", ""),
             "picture": profile.get("picture", ""),
-            "email_verified": profile.get("email_verified", True)
-            in ("true", True),
+            "email_verified": profile.get("email_verified", True) in ("true", True),
         }
 
     @staticmethod

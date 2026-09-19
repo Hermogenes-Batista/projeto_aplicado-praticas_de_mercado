@@ -1,4 +1,5 @@
 import graphene
+import graphene_django_optimizer as query_optimizer
 
 from ...models import Activity
 from ..types import ActivityType
@@ -10,4 +11,4 @@ class ActivitiesQuery(graphene.ObjectType):
 
     def resolve_activities(self, info):
         user = get_authenticated_user(info.context)
-        return Activity.objects.filter(created_by=user)
+        return query_optimizer.query(Activity.objects.filter(created_by=user), info)

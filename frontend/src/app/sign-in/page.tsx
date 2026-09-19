@@ -92,7 +92,6 @@ export default function SignIn() {
           {/* Google Sign In via Frontend with JWT */}
           <GoogleSignInButton redirectAfterLogin="/" />
 
-
           {/*<Divider sx={{ width: "100%", my: 1.5 }}>*/}
           {/*  <Typography variant="caption" color="text.secondary">*/}
           {/*    OU COM E-MAIL*/}

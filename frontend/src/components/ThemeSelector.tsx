@@ -50,5 +50,5 @@ export default function ThemeSelector() {
         </Select>
       </FormControl>
     </Stack>
-    );
+  );
 }

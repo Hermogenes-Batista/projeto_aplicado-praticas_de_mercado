@@ -14,8 +14,9 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 
@@ -29,14 +30,12 @@ def health_check(request):
 
 
 urlpatterns = [
-    path('not-logical/', admin.site.urls),
+    path("not-logical/", admin.site.urls),
     # path('accounts/', include('allauth.urls')),
-
     path(
-        'graphql/',
+        "graphql/",
         csrf_exempt(SecureGraphQLView.as_view(schema=schema, graphiql=True)),
-        name='graphql',
+        name="graphql",
     ),
-
-    path('api/health/', health_check, name='health_check'),
+    path("api/health/", health_check, name="health_check"),
 ]

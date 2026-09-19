@@ -33,7 +33,8 @@ export default function GoogleSignInButton({
   redirectAfterLogin = "/",
   showDemoButton = true,
 }: GoogleSignInButtonProps) {
-  const { clientId, loginWithGoogleCredential, loginDemoUser, loading, error } = useAuth();
+  const { clientId, loginWithGoogleCredential, loginDemoUser, loading, error } =
+    useAuth();
   const router = useRouter();
   const googleButtonRef = useRef<HTMLDivElement>(null);
   const [gisLoaded, setGisLoaded] = useState(false);
@@ -88,12 +89,21 @@ export default function GoogleSignInButton({
     } catch (e) {
       console.warn("Aviso GIS:", e);
     }
-  }, [gisLoaded, clientId, loginWithGoogleCredential, redirectAfterLogin, router]);
+  }, [
+    gisLoaded,
+    clientId,
+    loginWithGoogleCredential,
+    redirectAfterLogin,
+    router,
+  ]);
 
   // Standard OAuth 2.0 redirect flow (not affected by GIS iframe blocking)
   const handleRedirectOAuth = () => {
     if (!clientId) return;
-    const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+    const origin =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : "http://localhost:3000";
     const redirectUri = `${origin}/auth/callback`;
     const authUrl =
       `https://accounts.google.com/o/oauth2/v2/auth?` +
@@ -105,7 +115,6 @@ export default function GoogleSignInButton({
       `prompt=select_account`;
     window.location.href = authUrl;
   };
-
 
   return (
     <Stack spacing={2} sx={{ width: "100%" }}>
