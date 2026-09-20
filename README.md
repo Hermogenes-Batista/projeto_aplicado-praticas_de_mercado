@@ -147,7 +147,7 @@ Para que o pipeline funcione, configure em **Settings > Secrets and variables > 
 | :--- | :--- |
 | `GHCR_PAT` | Personal Access Token com permissões `write:packages` e `read:packages` |
 | `ORACLE_HOST` | Endereço IP público ou hostname da VM Oracle Cloud |
-| `ORACLE_USER` | Usuário de acesso SSH na VM (ex.: `ubuntu`) |
+| `ORACLE_USER` | Usuário de acesso SSH na VM (ex.: `seu_usuario_ssh`) |
 | `ORACLE_SSH_PRIVATE_KEY` | Chave privada SSH autorizada em `~/.ssh/authorized_keys` da VM |
 | `NEXT_PUBLIC_API_URL` | URL completa da API em HTTPS (ex.: `https://seu-dominio.duckdns.org`) |
 
