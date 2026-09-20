@@ -221,6 +221,38 @@ server {
 sudo certbot --nginx -d seu-dominio.duckdns.org
 ```
 
+### 4. Firewall e Proteção com Fail2Ban (Princípio do Menor Privilégio)
+
+A infraestrutura na Oracle Cloud aplica o **Princípio do Menor Privilégio (Least Privilege)** para exposição de portas:
+
+- **Security List / NSG (Regras de Entrada Públicas):**
+  - `80/TCP`: HTTP (redirecionado automaticamente para HTTPS pelo Nginx)
+  - `443/TCP`: HTTPS (tráfego da aplicação web e GraphQL)
+  - `22/TCP`: SSH (porta administrativa de gerência sob proteção ativa do Fail2Ban)
+  - Portas internas (`3000`, `8000`, `3306`): **bloqueadas externamente**, restritas à rede local e ao IP privado da VCN.
+
+- **Proteção da Porta 22 (SSH) com Fail2Ban:**
+  Configurado com tolerância de **4 erros** e tempo de banimento de **24 horas**:
+
+  ```ini
+  # /etc/fail2ban/jail.local
+  [DEFAULT]
+  bantime = 24h
+  findtime = 10m
+  maxretry = 4
+
+  [sshd]
+  enabled = true
+  port = 22
+  mode = aggressive
+  backend = systemd
+  ```
+
+  Para verificar o status ativo do Fail2Ban na VM:
+  ```bash
+  sudo fail2ban-client status sshd
+  ```
+
 ---
 
 ## 🔐 Como utilizar o JWT no DRF e GraphQL
@@ -261,7 +293,7 @@ O protótipo aplica medidas de **Secure by Design** para mitigar as seguintes ca
 - As mutações validam a propriedade do registro antes de editar ou excluir qualquer dado.
 - A atividade informada para um item também precisa pertencer ao usuário autenticado.
 - Arquivos de implementação:
-  - `projeto_aplicado/todo_app/graphql/queries/categories.py`
+  - `projeto_aplicado/todo_app/graphql/queries/activities.py`
   - `projeto_aplicado/todo_app/graphql/queries/items.py`
   - `projeto_aplicado/todo_app/graphql/mutations/helpers.py`
   - `projeto_aplicado/todo_app/graphql/mutations/activity.py`
@@ -285,6 +317,17 @@ O protótipo aplica medidas de **Secure by Design** para mitigar as seguintes ca
 - Serializers validam tipagem, limites e sanitizam dados antes da persistência.
 - Operações GraphQL utilizam variáveis tipadas.
 - O React escapa automaticamente qualquer entrada renderizada no DOM.
+- Arquivos de implementação:
+  - `projeto_aplicado/todo_app/serializers/activity.py`
+  - `projeto_aplicado/todo_app/serializers/item.py`
+  - `frontend/src/graphql/todo.graphql`
+
+### 🤖 Uso de Inteligência Artificial no Desenvolvimento (Eixo 3)
+O protótipo e a infraestrutura foram desenvolvidos e auditados com o auxílio de **Inteligência Artificial através da IDE Antigravity (Google DeepMind)** e ferramentas equivalentes de assistência de código, utilizadas ativamente para:
+- Geração da arquitetura de containers Docker (desenvolvimento e produção multistage);
+- Elaboração e validação da pipeline de CI/CD e scripts de rollback no GitHub Actions;
+- Implementação de Secure by Design mitigando vulnerabilidades do OWASP Top 10 (controle de acesso, sanitização e autenticação JWT em cookies seguros);
+- Revisão contínua de boas práticas de segurança e auditoria do histórico de commits.
 
 ### Configuração Segura por Padrão
 - `DEBUG=False` aplicado estritamente em produção.
