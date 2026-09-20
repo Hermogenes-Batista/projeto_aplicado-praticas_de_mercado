@@ -230,3 +230,8 @@ secret.json
 .DS_Store
 *.swp
 *.swo
+
+# Generic files
+chat.txt
+precommit.txt
+app.conf
