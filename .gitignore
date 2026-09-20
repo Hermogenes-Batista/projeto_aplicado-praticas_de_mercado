@@ -232,6 +232,4 @@ secret.json
 *.swo
 
 # Generic files
-chat.txt
-precommit.txt
-app.conf
+chats/
