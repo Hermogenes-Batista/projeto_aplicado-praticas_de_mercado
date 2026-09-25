@@ -482,11 +482,53 @@ export default function ActivityTodosPage() {
                   </ListItem>
                 ))}
                 {items.map((item) => (
-                  <ListItem
-                    key={item.id}
-                    divider
-                    secondaryAction={
+                  <ListItem key={item.id} divider>
+                    <Checkbox
+                      checked={item.isResolved}
+                      onChange={() => void toggleItem(item)}
+                      disabled={saving}
+                    />
+                    <Stack direction="row" spacing={1} width={"100%"}>
+                      {editingItemId === item.id ? (
+                        <TextField
+                          value={editingItemName}
+                          onChange={(event) =>
+                            setEditingItemName(event.target.value)
+                          }
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") void saveItem(item);
+                            else if (event.key === "Escape") {
+                              setEditingItemId(null);
+                              setEditingItemName("");
+                            }
+                          }}
+                          size="small"
+                          fullWidth
+                          style={{
+                            display: "flex",
+                          }}
+                        />
+                      ) : (
+                        <ListItemText
+                          primary={item.name}
+                          sx={{
+                            textDecoration: item.isResolved
+                              ? "line-through"
+                              : "none",
+                          }}
+                        />
+                      )}
                       <Stack direction="row" spacing={1}>
+                        {editingItemId === item.id && (
+                          <Button
+                            size="small"
+                            startIcon={<SaveIcon />}
+                            onClick={() => saveItem(item)}
+                            disabled={item.isResolved}
+                          >
+                            Salvar
+                          </Button>
+                        )}
                         <Button
                           size="small"
                           startIcon={<EditIcon />}
@@ -508,35 +550,7 @@ export default function ActivityTodosPage() {
                           Excluir
                         </Button>
                       </Stack>
-                    }
-                  >
-                    <Checkbox
-                      checked={item.isResolved}
-                      onChange={() => void toggleItem(item)}
-                      disabled={saving}
-                    />
-                    {editingItemId === item.id ? (
-                      <TextField
-                        value={editingItemName}
-                        onChange={(event) =>
-                          setEditingItemName(event.target.value)
-                        }
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") void saveItem(item);
-                        }}
-                        size="small"
-                        fullWidth
-                      />
-                    ) : (
-                      <ListItemText
-                        primary={item.name}
-                        sx={{
-                          textDecoration: item.isResolved
-                            ? "line-through"
-                            : "none",
-                        }}
-                      />
-                    )}
+                    </Stack>
                   </ListItem>
                 ))}
                 {!items.length && !pendingItems.length && (

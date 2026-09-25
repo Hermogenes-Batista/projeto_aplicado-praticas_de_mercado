@@ -6,7 +6,7 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 
 # Usa '--legacy-peer-deps' para evitar os conflitos de dependência do npm que vimos anteriormente
-RUN npm ci --legacy-peer-deps
+RUN npm ci
 
 # Copia o restante do código-fonte
 COPY . .
