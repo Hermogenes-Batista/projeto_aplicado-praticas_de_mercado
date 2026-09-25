@@ -233,3 +233,7 @@ secret.json
 
 # Generic files
 chats/
+
+
+# Typescript
+*.tsbuildinfo

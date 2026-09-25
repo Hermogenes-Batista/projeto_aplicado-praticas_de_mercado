@@ -199,7 +199,6 @@ export default function TodosPage() {
   };
 
   const saveActivity = async () => {
-    console.log("Chamou aqui? saveActivity");
     if (!activityName.trim()) return;
     setSaving(true);
     setError(null);
@@ -425,39 +424,7 @@ export default function TodosPage() {
     selectedActivityIds !== null;
 
   const renderItem = (item: TodoItem) => (
-    <ListItem
-      key={item.id}
-      divider
-      secondaryAction={
-        <Stack direction="row">
-          {!item.isResolved && (
-            <>
-              <Button
-                size="small"
-                startIcon={<EditIcon />}
-                onClick={() => openEditItem(item)}
-              >
-                Editar
-              </Button>
-              <Button
-                color="error"
-                size="small"
-                startIcon={<DeleteIcon />}
-                onClick={() =>
-                  setDeleteTarget({
-                    type: "item",
-                    id: item.id,
-                    name: item.name,
-                  })
-                }
-              >
-                Excluir
-              </Button>
-            </>
-          )}
-        </Stack>
-      }
-    >
+    <ListItem key={item.id} divider>
       <Checkbox
         checked={item.isResolved}
         onChange={() => void toggleItemResolved(item)}
@@ -710,14 +677,6 @@ export default function TodosPage() {
                       }
                     >
                       Excluir
-                    </Button>
-                    <Button
-                      size="small"
-                      variant="contained"
-                      startIcon={<AddIcon />}
-                      onClick={() => openNewItem(activity.id)}
-                    >
-                      Adicionar item
                     </Button>
                   </Stack>
                 </Stack>
