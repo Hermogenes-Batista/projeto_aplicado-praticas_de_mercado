@@ -518,38 +518,40 @@ export default function ActivityTodosPage() {
                           }}
                         />
                       )}
-                      <Stack direction="row" spacing={1}>
-                        {editingItemId === item.id && (
+                      {!item.isResolved && (
+                        <Stack direction="row" spacing={1}>
+                          {editingItemId === item.id && (
+                            <Button
+                              size="small"
+                              startIcon={<SaveIcon />}
+                              onClick={() => saveItem(item)}
+                              disabled={item.isResolved}
+                            >
+                              Salvar
+                            </Button>
+                          )}
                           <Button
                             size="small"
-                            startIcon={<SaveIcon />}
-                            onClick={() => saveItem(item)}
+                            startIcon={<EditIcon />}
+                            onClick={() => {
+                              setEditingItemId(item.id);
+                              setEditingItemName(item.name);
+                            }}
                             disabled={item.isResolved}
                           >
-                            Salvar
+                            Editar
                           </Button>
-                        )}
-                        <Button
-                          size="small"
-                          startIcon={<EditIcon />}
-                          onClick={() => {
-                            setEditingItemId(item.id);
-                            setEditingItemName(item.name);
-                          }}
-                          disabled={item.isResolved}
-                        >
-                          Editar
-                        </Button>
-                        <Button
-                          size="small"
-                          color="error"
-                          startIcon={<DeleteIcon />}
-                          onClick={() => setDeleteItemId(item.id)}
-                          disabled={item.isResolved}
-                        >
-                          Excluir
-                        </Button>
-                      </Stack>
+                          <Button
+                            size="small"
+                            color="error"
+                            startIcon={<DeleteIcon />}
+                            onClick={() => setDeleteItemId(item.id)}
+                            disabled={item.isResolved}
+                          >
+                            Excluir
+                          </Button>
+                        </Stack>
+                      )}
                     </Stack>
                   </ListItem>
                 ))}
