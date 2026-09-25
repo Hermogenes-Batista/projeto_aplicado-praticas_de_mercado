@@ -25,6 +25,7 @@ import {
   Stack,
   Toolbar,
   Typography,
+  useTheme,
 } from "@mui/material";
 import ChecklistIcon from "@mui/icons-material/Checklist";
 import DashboardIcon from "@mui/icons-material/Dashboard";
@@ -40,6 +41,7 @@ import {
   TodoActivitiesQuery,
 } from "@/graphql/generated";
 import AddIcon from "@mui/icons-material/Add";
+import { useMediaQuery } from "@mui/system";
 
 const drawerWidth = 240;
 
@@ -64,6 +66,9 @@ export default function Dashboard() {
     logout,
     requestAuthenticatedGraphQL,
   } = useAuth();
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const fetchTodoMetrics = React.useCallback(async () => {
     if (!token) {
@@ -210,9 +215,11 @@ export default function Dashboard() {
             >
               <MenuIcon />
             </IconButton>
-            <Typography variant="h6" fontWeight={700}>
-              Painel de Controle
-            </Typography>
+            {!isMobile && (
+              <Typography variant="h6" fontWeight={700}>
+                Painel de Controle
+              </Typography>
+            )}
           </Box>
           {user ? (
             <Stack direction="row" spacing={1.5} alignItems="center">
@@ -222,7 +229,7 @@ export default function Dashboard() {
                 variant="contained"
                 startIcon={<AddIcon />}
               >
-                Nova Atividade
+                {!isMobile && "Nova"} Atividade
               </Button>
               <ThemeSelector />
               <Avatar

@@ -9,8 +9,10 @@ import {
   Select,
   SelectChangeEvent,
   Stack,
+  useTheme,
 } from "@mui/material";
 import { useThemeMode, type ThemeMode } from "@/context/ThemeContext";
+import { useMediaQuery } from "@mui/system";
 
 const themeLabels: Record<ThemeMode, string> = {
   light: "Claro",
@@ -20,6 +22,8 @@ const themeLabels: Record<ThemeMode, string> = {
 
 export default function ThemeSelector() {
   const { themeMode, setThemeMode } = useThemeMode();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const handleChange = (event: SelectChangeEvent<ThemeMode>) => {
     setThemeMode(event.target.value as ThemeMode);
@@ -32,7 +36,7 @@ export default function ThemeSelector() {
       spacing={1}
       sx={{ flexShrink: 0 }}
     >
-      <PaletteIcon color="action" fontSize="small" />
+      {!isMobile && <PaletteIcon color="action" fontSize="small" />}
       <FormControl size="small" sx={{ minWidth: 112 }}>
         <InputLabel id="theme-selector-label">Tema</InputLabel>
         <Select

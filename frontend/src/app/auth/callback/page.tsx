@@ -25,7 +25,7 @@ function CallbackHandler() {
     const errorParam = searchParams.get("error");
 
     if (errorParam) {
-      setError(`Erro retornado pelo Google: ${errorParam}`);
+      setError(`Erro: ${errorParam}`);
       return;
     }
 
@@ -43,13 +43,11 @@ function CallbackHandler() {
         if (success) {
           router.push("/");
         } else {
-          setError(
-            "Não foi possível autenticar o código com o Django backend.",
-          );
+          setError("Não foi possível autenticar.");
         }
       })
       .catch((err) => {
-        setError(err.message || "Erro durante o intercâmbio de autenticação.");
+        setError(err.message || "Erro durante autenticação.");
       });
   }, [searchParams, loginWithGoogleCode, router]);
 
@@ -65,12 +63,6 @@ function CallbackHandler() {
       ) : (
         <Stack spacing={3} alignItems="center">
           <CircularProgress size={48} />
-          <Typography variant="h6" fontWeight={600}>
-            Processando a autenticação com o Google...
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Validando as credenciais com o backend Django e gerando tokens JWT.
-          </Typography>
         </Stack>
       )}
     </Paper>
