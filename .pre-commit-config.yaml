@@ -24,12 +24,20 @@ repos:
       - id: prettier
         types_or: [javascript, jsx, ts, tsx, css, json]
 
-#  Commented because its not working
-#  - repo: local
-#    hooks:
-#      - id: next-lint
-#        name: next-lint
-#        entry: bash -c 'cd frontend && npx next lint' ""
-#        language: system
-#        files: ^frontend/.*\.(js|jsx|ts|tsx)$
-#        pass_filenames: false
+  - repo: local
+    hooks:
+      # Verificação de tipos com TypeScript
+      - id: typecheck
+        name: typecheck
+        entry: bash -c 'cd frontend && npm run typecheck'
+        language: system
+        files: ^frontend/.*\.(ts|tsx)$
+        pass_filenames: false
+
+      # Linter do Next.js / ESLint
+      - id: next-lint
+        name: next-lint
+        entry: bash -c 'cd frontend && npx next lint --file $(echo "$@" | sed "s|frontend/||g")' --
+        language: system
+        files: ^frontend/.*\.(js|jsx|ts|tsx)$
+        pass_filenames: true
