@@ -27,6 +27,7 @@ import {
   TextField,
   Toolbar,
   Typography,
+  useTheme,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import FilterListIcon from "@mui/icons-material/FilterList";
@@ -60,6 +61,7 @@ import {
   UpdateTodoItemDocument,
   UpdateTodoItemMutation,
 } from "@/graphql/generated";
+import { useMediaQuery } from "@mui/system";
 
 type TodoActivities = NonNullable<TodoActivitiesQuery["activities"][number]>;
 type TodoItem = NonNullable<
@@ -111,6 +113,9 @@ export default function TodosPage() {
   >(null);
   const [activityFilterAnchor, setActivityFilterAnchor] =
     useState<null | HTMLElement>(null);
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [newActivityItems, setNewActivityItems] = useState<
     Array<{ name: string; isResolved: boolean }>
@@ -444,7 +449,7 @@ export default function TodosPage() {
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Toolbar disableGutters sx={{ justifyContent: "space-between", mb: 3 }}>
         <Box>
-          <Typography variant="h4" fontWeight={700}>
+          <Typography variant={isMobile ? "h6" : "h4"} fontWeight={700}>
             Lista de TODOs
           </Typography>
           <Typography color="text.secondary">
@@ -466,7 +471,7 @@ export default function TodosPage() {
             variant="contained"
             startIcon={<AddIcon />}
           >
-            Nova Atividade
+            {!isMobile && "Nova"} Atividade
           </Button>
         </Stack>
       </Toolbar>

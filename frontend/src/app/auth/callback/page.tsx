@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import Container from "@mui/material/Container";
 import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
+import NoSsr from "@mui/material/NoSsr";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
@@ -56,7 +56,7 @@ function CallbackHandler() {
       {error ? (
         <Stack spacing={3}>
           <Alert severity="error">{error}</Alert>
-          <Button component={NextLink} href="/sign-in-side" variant="contained">
+          <Button component={NextLink} href="/sign-in" variant="contained">
             Voltar ao Login
           </Button>
         </Stack>
@@ -70,11 +70,17 @@ function CallbackHandler() {
 }
 
 export default function AuthCallback() {
+  const fallback = <p role="status">Concluindo autenticação...</p>;
+
   return (
-    <Container maxWidth="sm" sx={{ mt: 10 }}>
-      <Suspense fallback={<CircularProgress />}>
-        <CallbackHandler />
-      </Suspense>
-    </Container>
+    // The saved theme can change before this route's Suspense boundary hydrates.
+    // Mount the browser-only OAuth flow after hydration with a theme-free fallback.
+    <NoSsr fallback={fallback}>
+      <Container maxWidth="sm" sx={{ mt: 10 }}>
+        <Suspense fallback={fallback}>
+          <CallbackHandler />
+        </Suspense>
+      </Container>
+    </NoSsr>
   );
 }
