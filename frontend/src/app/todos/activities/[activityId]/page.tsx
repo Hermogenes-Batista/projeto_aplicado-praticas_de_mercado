@@ -320,7 +320,7 @@ export default function ActivityTodosPage() {
   }
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
+    <Container maxWidth="md" sx={{ py: 4, px: { xs: 1, sm: 3 } }}>
       <Stack direction="row" justifyContent="space-between" sx={{ mb: 3 }}>
         <Button
           component={NextLink}

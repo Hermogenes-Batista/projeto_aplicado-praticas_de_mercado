@@ -76,7 +76,7 @@ export default function AuthCallback() {
     // The saved theme can change before this route's Suspense boundary hydrates.
     // Mount the browser-only OAuth flow after hydration with a theme-free fallback.
     <NoSsr fallback={fallback}>
-      <Container maxWidth="sm" sx={{ mt: 10 }}>
+      <Container maxWidth="sm" sx={{ mt: 10, px: { xs: 1, sm: 3 } }}>
         <Suspense fallback={fallback}>
           <CallbackHandler />
         </Suspense>

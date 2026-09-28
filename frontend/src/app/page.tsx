@@ -321,12 +321,12 @@ export default function Dashboard() {
         component="main"
         sx={{
           flexGrow: 1,
-          p: { xs: 2, md: 4 },
+          p: { xs: 1, sm: 2, md: 4 },
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           mt: 8,
         }}
       >
-        <Container maxWidth="lg">
+        <Container maxWidth="lg" sx={{ px: { xs: 0, sm: 3 } }}>
           <Card>
             <CardHeader
               title="Métricas dos TODOs"
