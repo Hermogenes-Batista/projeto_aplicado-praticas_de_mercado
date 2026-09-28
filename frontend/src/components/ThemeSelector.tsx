@@ -37,7 +37,12 @@ export default function ThemeSelector() {
       sx={{ flexShrink: 0 }}
     >
       {!isMobile && <PaletteIcon color="action" fontSize="small" />}
-      <FormControl size="small" sx={{ minWidth: 112 }}>
+      <FormControl
+        size="small"
+        sx={{
+          minWidth: isMobile ? "2vw" : 112,
+        }}
+      >
         <InputLabel id="theme-selector-label">Tema</InputLabel>
         <Select
           labelId="theme-selector-label"

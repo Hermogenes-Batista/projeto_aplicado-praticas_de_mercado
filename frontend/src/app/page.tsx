@@ -222,7 +222,11 @@ export default function Dashboard() {
             )}
           </Box>
           {user ? (
-            <Stack direction="row" spacing={1.5} alignItems="center">
+            <Stack
+              direction="row"
+              spacing={{ xs: 1, sm: 1.5 }}
+              alignItems="center"
+            >
               <Button
                 component={NextLink}
                 href="/todos/activities/new"
@@ -250,10 +254,17 @@ export default function Dashboard() {
                 variant="outlined"
                 size="small"
                 color="error"
-                startIcon={<LogoutIcon />}
                 onClick={() => void logout()}
+                startIcon={!isMobile ? <LogoutIcon /> : undefined}
+                aria-label="Sair"
+                title="Sair"
+                sx={{
+                  minWidth: isMobile ? "auto" : undefined,
+                  p: isMobile ? "6px" : undefined,
+                  flexShrink: 0,
+                }}
               >
-                Sair
+                {isMobile ? <LogoutIcon fontSize="small" /> : "Sair"}
               </Button>
             </Stack>
           ) : (
@@ -310,12 +321,12 @@ export default function Dashboard() {
         component="main"
         sx={{
           flexGrow: 1,
-          p: { xs: 2, md: 4 },
+          p: { xs: 1, sm: 2, md: 4 },
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           mt: 8,
         }}
       >
-        <Container maxWidth="lg">
+        <Container maxWidth="lg" sx={{ px: { xs: 0, sm: 3 } }}>
           <Card>
             <CardHeader
               title="Métricas dos TODOs"

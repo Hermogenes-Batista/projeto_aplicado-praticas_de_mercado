@@ -27,6 +27,7 @@ import {
   TextField,
   Toolbar,
   Typography,
+  useTheme,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import FilterListIcon from "@mui/icons-material/FilterList";
@@ -60,6 +61,7 @@ import {
   UpdateTodoItemDocument,
   UpdateTodoItemMutation,
 } from "@/graphql/generated";
+import { useMediaQuery } from "@mui/system";
 
 type TodoActivities = NonNullable<TodoActivitiesQuery["activities"][number]>;
 type TodoItem = NonNullable<
@@ -104,6 +106,7 @@ export default function TodosPage() {
     useState<DialogMode>("create");
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [createdAtSort, setCreatedAtSort] = useState<SortDirection>("asc");
   const [selectedActivityIds, setSelectedActivityIds] = useState<
@@ -111,6 +114,9 @@ export default function TodosPage() {
   >(null);
   const [activityFilterAnchor, setActivityFilterAnchor] =
     useState<null | HTMLElement>(null);
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [newActivityItems, setNewActivityItems] = useState<
     Array<{ name: string; isResolved: boolean }>
@@ -251,17 +257,29 @@ export default function TodosPage() {
   };
 
   const deleteActivity = async (id: string) => {
-    const data = await requestAuthenticatedGraphQL<DeleteTodoActivityMutation>(
-      DeleteTodoActivityDocument,
-      { id },
-    );
-    const errors = mutationErrors(data.deleteActivity?.errors);
-    if (!data.deleteActivity?.success || errors) {
-      setError(errors || "Falha ao excluir a atividade.");
-      return;
+    setSaving(true);
+    setDeleteError(null);
+    try {
+      const data =
+        await requestAuthenticatedGraphQL<DeleteTodoActivityMutation>(
+          DeleteTodoActivityDocument,
+          { id },
+        );
+      const errors = mutationErrors(data.deleteActivity?.errors);
+      if (!data.deleteActivity?.success || errors) {
+        throw new Error(errors || "Falha ao excluir a atividade.");
+      }
+      setDeleteTarget(null);
+      await loadData();
+    } catch (cause) {
+      setDeleteError(
+        cause instanceof Error
+          ? cause.message
+          : "Falha ao excluir a atividade.",
+      );
+    } finally {
+      setSaving(false);
     }
-    await loadData();
-    setDeleteTarget(null);
   };
 
   const toggleItemResolved = async (item: TodoItem) => {
@@ -441,10 +459,26 @@ export default function TodosPage() {
   );
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Toolbar disableGutters sx={{ justifyContent: "space-between", mb: 3 }}>
-        <Box>
-          <Typography variant="h4" fontWeight={700}>
+    <Container maxWidth="lg" sx={{ py: 4, px: { xs: 1, sm: 3 } }}>
+      <Toolbar
+        disableGutters
+        sx={{
+          flexDirection: { xs: "column", sm: "row" },
+          alignItems: { xs: "stretch", sm: "center" },
+          justifyContent: "space-between",
+          gap: 2,
+          mb: 3,
+        }}
+      >
+        <Box
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexDirection: "column",
+          }}
+        >
+          <Typography variant={isMobile ? "h6" : "h4"} fontWeight={700}>
             Lista de TODOs
           </Typography>
           <Typography color="text.secondary">
@@ -452,9 +486,19 @@ export default function TodosPage() {
           </Typography>
         </Box>
         <Stack
-          direction={{ xs: "column", sm: "row" }}
+          direction="row"
           spacing={1}
-          alignItems={{ xs: "stretch", sm: "center" }}
+          alignItems="center"
+          justifyContent={"space-between"}
+          sx={{
+            flexWrap: "nowrap",
+            "& > .MuiButton-root": {
+              minWidth: 0,
+              px: { xs: 1, sm: 2 },
+              fontSize: { xs: "0.75rem", sm: "0.875rem" },
+              whiteSpace: "nowrap",
+            },
+          }}
         >
           <ThemeSelector />
           <Button component={NextLink} href="/" variant="outlined">
@@ -466,7 +510,7 @@ export default function TodosPage() {
             variant="contained"
             startIcon={<AddIcon />}
           >
-            Nova Atividade
+            {!isMobile && "Nova"} Atividade
           </Button>
         </Stack>
       </Toolbar>
@@ -820,7 +864,11 @@ export default function TodosPage() {
             : ""
         }
         loading={saving}
-        onClose={() => setDeleteTarget(null)}
+        error={deleteError}
+        onClose={() => {
+          setDeleteTarget(null);
+          setDeleteError(null);
+        }}
         onConfirm={() => {
           if (!deleteTarget) return;
           if (deleteTarget.type === "Activity") {

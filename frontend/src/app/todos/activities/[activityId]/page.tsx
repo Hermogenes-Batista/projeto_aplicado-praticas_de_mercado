@@ -19,6 +19,7 @@ import {
   Stack,
   TextField,
   Typography,
+  useTheme,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -47,6 +48,7 @@ import {
   UpdateTodoItemDocument,
   UpdateTodoItemMutation,
 } from "@/graphql/generated";
+import { useMediaQuery } from "@mui/system";
 
 type Activity = NonNullable<TodoActivitiesQuery["activities"][number]>;
 type TodoItem = NonNullable<
@@ -74,6 +76,9 @@ export default function ActivityTodosPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deleteItemId, setDeleteItemId] = useState<string | null>(null);
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const errorsFrom = (errors: Array<string | null> | undefined) =>
     errors?.filter((message): message is string => Boolean(message)).join(", ");
@@ -315,7 +320,7 @@ export default function ActivityTodosPage() {
   }
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
+    <Container maxWidth="md" sx={{ py: 4, px: { xs: 1, sm: 3 } }}>
       <Stack direction="row" justifyContent="space-between" sx={{ mb: 3 }}>
         <Button
           component={NextLink}
@@ -520,36 +525,72 @@ export default function ActivityTodosPage() {
                       )}
                       {!item.isResolved && (
                         <Stack direction="row" spacing={1}>
-                          {editingItemId === item.id && (
-                            <Button
-                              size="small"
-                              startIcon={<SaveIcon />}
-                              onClick={() => saveItem(item)}
-                              disabled={item.isResolved}
-                            >
-                              Salvar
-                            </Button>
+                          {editingItemId === item.id &&
+                            (isMobile ? (
+                              <IconButton
+                                size="small"
+                                color="primary"
+                                onClick={() => saveItem(item)}
+                                disabled={item.isResolved}
+                              >
+                                <SaveIcon fontSize="small" />
+                              </IconButton>
+                            ) : (
+                              <Button
+                                size="small"
+                                startIcon={<SaveIcon />}
+                                onClick={() => saveItem(item)}
+                                disabled={item.isResolved}
+                              >
+                                Salvar
+                              </Button>
+                            ))}
+
+                          {isMobile ? (
+                            <>
+                              <IconButton
+                                size="small"
+                                onClick={() => {
+                                  setEditingItemId(item.id);
+                                  setEditingItemName(item.name);
+                                }}
+                                disabled={item.isResolved}
+                              >
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => setDeleteItemId(item.id)}
+                                disabled={item.isResolved}
+                              >
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </>
+                          ) : (
+                            <>
+                              <Button
+                                size="small"
+                                startIcon={<EditIcon />}
+                                onClick={() => {
+                                  setEditingItemId(item.id);
+                                  setEditingItemName(item.name);
+                                }}
+                                disabled={item.isResolved}
+                              >
+                                Editar
+                              </Button>
+                              <Button
+                                size="small"
+                                color="error"
+                                startIcon={<DeleteIcon />}
+                                onClick={() => setDeleteItemId(item.id)}
+                                disabled={item.isResolved}
+                              >
+                                Excluir
+                              </Button>
+                            </>
                           )}
-                          <Button
-                            size="small"
-                            startIcon={<EditIcon />}
-                            onClick={() => {
-                              setEditingItemId(item.id);
-                              setEditingItemName(item.name);
-                            }}
-                            disabled={item.isResolved}
-                          >
-                            Editar
-                          </Button>
-                          <Button
-                            size="small"
-                            color="error"
-                            startIcon={<DeleteIcon />}
-                            onClick={() => setDeleteItemId(item.id)}
-                            disabled={item.isResolved}
-                          >
-                            Excluir
-                          </Button>
                         </Stack>
                       )}
                     </Stack>

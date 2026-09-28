@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Alert,
   Button,
   Dialog,
   DialogActions,
@@ -14,6 +15,7 @@ interface ConfirmDialogProps {
   title: string;
   message: string;
   loading?: boolean;
+  error?: string | null;
   onClose: () => void;
   onConfirm: () => void;
 }
@@ -23,6 +25,7 @@ export default function ConfirmDialog({
   title,
   message,
   loading = false,
+  error,
   onClose,
   onConfirm,
 }: ConfirmDialogProps) {
@@ -31,6 +34,11 @@ export default function ConfirmDialog({
       <DialogTitle>{title}</DialogTitle>
       <DialogContent>
         <DialogContentText>{message}</DialogContentText>
+        {error && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            {error}
+          </Alert>
+        )}
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={loading}>
