@@ -21,16 +21,13 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SaveIcon from "@mui/icons-material/Save";
 import AddIcon from "@mui/icons-material/Add";
-import DashboardIcon from "@mui/icons-material/Dashboard";
 import EditIcon from "@mui/icons-material/Edit";
 import ScheduleIcon from "@mui/icons-material/Schedule";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
-import NextLink from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import ActivityCountdown from "@/components/ActivityCountdown";
@@ -360,24 +357,6 @@ export default function ActivityTodosPage() {
 
   return (
     <Container maxWidth="md" sx={{ py: 4, px: { xs: 1, sm: 3 } }}>
-      <Stack direction="row" justifyContent="space-between" sx={{ mb: 3 }}>
-        <Button
-          component={NextLink}
-          href="/todos"
-          startIcon={<ArrowBackIcon />}
-        >
-          Voltar para TODOs
-        </Button>
-        <Button
-          component={NextLink}
-          href="/"
-          variant="outlined"
-          startIcon={<DashboardIcon />}
-        >
-          Dashboard
-        </Button>
-      </Stack>
-
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
           {error}

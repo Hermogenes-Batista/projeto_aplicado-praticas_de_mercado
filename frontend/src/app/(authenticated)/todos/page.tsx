@@ -25,7 +25,6 @@ import {
   Select,
   Stack,
   TextField,
-  Toolbar,
   Typography,
   useTheme,
 } from "@mui/material";
@@ -39,7 +38,6 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import NextLink from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import ThemeSelector from "@/components/ThemeSelector";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import ActivityCountdown from "@/components/ActivityCountdown";
 import ActivityDueDateField from "@/components/ActivityDueDateField";
@@ -470,61 +468,6 @@ export default function TodosPage() {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4, px: { xs: 1, sm: 3 } }}>
-      <Toolbar
-        disableGutters
-        sx={{
-          flexDirection: { xs: "column", sm: "row" },
-          alignItems: { xs: "stretch", sm: "center" },
-          justifyContent: "space-between",
-          gap: 2,
-          mb: 3,
-        }}
-      >
-        <Box
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexDirection: "column",
-          }}
-        >
-          <Typography variant={isMobile ? "h6" : "h4"} fontWeight={700}>
-            Lista de TODOs
-          </Typography>
-          <Typography color="text.secondary">
-            Gerencie suas tarefas e atividades.
-          </Typography>
-        </Box>
-        <Stack
-          direction="row"
-          spacing={1}
-          alignItems="center"
-          justifyContent={"space-between"}
-          sx={{
-            flexWrap: "nowrap",
-            "& > .MuiButton-root": {
-              minWidth: 0,
-              px: { xs: 1, sm: 2 },
-              fontSize: { xs: "0.75rem", sm: "0.875rem" },
-              whiteSpace: "nowrap",
-            },
-          }}
-        >
-          <ThemeSelector />
-          <Button component={NextLink} href="/" variant="outlined">
-            Dashboard
-          </Button>
-          <Button
-            component={NextLink}
-            href="/todos/activities/new"
-            variant="contained"
-            startIcon={<AddIcon />}
-          >
-            {!isMobile && "Nova"} Atividade
-          </Button>
-        </Stack>
-      </Toolbar>
-
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
           {error}
