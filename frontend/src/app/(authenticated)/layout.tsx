@@ -102,9 +102,13 @@ export default function AuthenticatedLayout({
     </Box>
   );
 
-  const title = pathname.startsWith("/todos")
-    ? "Lista de TODOs"
-    : "Painel de Controle";
+  const title = pathname.startsWith("/todos/activities/new")
+    ? "Criar Atividade"
+    : pathname.startsWith("/todos/activities/")
+      ? "Edit Atividade"
+      : pathname.startsWith("/todos")
+        ? "Lista de TODOs"
+        : "Painel de Controle";
 
   return (
     <Box
@@ -235,7 +239,7 @@ export default function AuthenticatedLayout({
           minWidth: 0,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           mt: 8,
-          p: { xs: 1, sm: 2, md: 4 },
+          p: "10px",
         }}
       >
         {children}

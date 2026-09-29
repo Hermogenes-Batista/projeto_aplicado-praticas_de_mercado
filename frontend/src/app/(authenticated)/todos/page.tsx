@@ -467,7 +467,7 @@ export default function TodosPage() {
   );
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4, px: { xs: 1, sm: 3 } }}>
+    <Container maxWidth="lg" sx={{ pt: 1, pb: 4, px: { xs: 1, sm: 3 } }}>
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
           {error}

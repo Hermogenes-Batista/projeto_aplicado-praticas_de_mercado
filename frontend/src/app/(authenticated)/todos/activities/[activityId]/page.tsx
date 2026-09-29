@@ -356,7 +356,7 @@ export default function ActivityTodosPage() {
   }
 
   return (
-    <Container maxWidth="md" sx={{ py: 4, px: { xs: 1, sm: 3 } }}>
+    <Container maxWidth="md" sx={{ pt: 1, pb: 4, px: { xs: 1, sm: 3 } }}>
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
           {error}
