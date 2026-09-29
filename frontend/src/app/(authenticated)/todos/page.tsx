@@ -55,8 +55,6 @@ import {
   DeleteTodoItemMutation,
   TodoActivitiesDocument,
   TodoActivitiesQuery,
-  TodoItemsDocument,
-  TodoItemsQuery,
   UpdateTodoActivityDocument,
   UpdateTodoActivityMutation,
   UpdateTodoItemDocument,

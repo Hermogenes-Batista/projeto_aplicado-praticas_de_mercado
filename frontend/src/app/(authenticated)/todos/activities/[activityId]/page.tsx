@@ -461,7 +461,7 @@ export default function ActivityTodosPage() {
               )}
               {!isNewActivity && !editingActivityName && (
                 <Stack
-                  direction={{ xs: "column", sm: "row" }}
+                  direction={{ xs: "row", sm: "row" }}
                   alignItems={{ sm: "center" }}
                   spacing={1}
                   sx={{ mt: 2 }}

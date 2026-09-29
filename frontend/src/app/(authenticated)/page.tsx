@@ -23,6 +23,7 @@ import {
   TodoActivitiesDocument,
   TodoActivitiesQuery,
 } from "@/graphql/generated";
+import ActivityCountdown from "@/components/ActivityCountdown";
 
 type TodoActivities = NonNullable<TodoActivitiesQuery["activities"][number]>;
 type TodoItem = NonNullable<
@@ -92,8 +93,7 @@ export default function Dashboard() {
     );
     const resolved = activityItems.filter((item) => item.isResolved).length;
     return {
-      id: activity.id,
-      name: activity.name,
+      ...activity,
       total: activityItems.length,
       resolved,
       pending: activityItems.length - resolved,
@@ -187,25 +187,20 @@ export default function Dashboard() {
                   <Grid item xs={12} md={6} key={activity.name}>
                     <Card variant="outlined" sx={{ height: "100%" }}>
                       <CardContent>
-                        {activity.id ? (
-                          <Typography
-                            component={NextLink}
-                            href={`/todos/activities/${activity.id}`}
-                            variant="subtitle1"
-                            fontWeight={700}
-                            sx={{
-                              color: "primary.main",
-                              textDecoration: "none",
-                              "&:hover": { textDecoration: "underline" },
-                            }}
-                          >
-                            {activity.name}
-                          </Typography>
-                        ) : (
-                          <Typography variant="subtitle1" fontWeight={700}>
-                            {activity.name}
-                          </Typography>
-                        )}
+                        <Typography
+                          component={NextLink}
+                          href={`/todos/activities/${activity.id}`}
+                          variant="subtitle1"
+                          fontWeight={700}
+                          sx={{
+                            color: "primary.main",
+                            textDecoration: "none",
+                            "&:hover": { textDecoration: "underline" },
+                          }}
+                        >
+                          {activity.name}
+                        </Typography>
+                        <ActivityCountdown dueDate={activity.dueDate} />
                         <Stack spacing={1.5} sx={{ mt: 2 }}>
                           <Stack direction="row" justifyContent="space-between">
                             <Typography variant="body2">

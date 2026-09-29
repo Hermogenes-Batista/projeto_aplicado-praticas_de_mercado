@@ -1,41 +1,14 @@
 query TodoItems($isResolved: Boolean) {
   items(isResolved: $isResolved) {
-    id
-    name
-    createdAt
-    updatedAt
-    isResolved
-    activity {
-      id
-      name
-    }
+    ...TodoItemFields
   }
 }
 
 query TodoActivities {
   activities {
-    id
-    name
-    dueDate
-    createdAt
-    updatedAt
-    isResolved
+    ...TodoActivityWithItemsFields
     createdBy {
       ...UserFields
-    }
-    items {
-      id
-      name
-      createdAt
-      updatedAt
-      isResolved
-      createdBy {
-        ...UserFields
-      }
-      activity {
-        id
-        name
-      }
     }
   }
 }
@@ -44,24 +17,9 @@ mutation CreateTodoActivity($name: String!, $dueDate: DateTime, $items: [ItemInp
   createActivity(name: $name, dueDate: $dueDate, items: $items) {
     errors
     activity {
-      id
-      name
-      dueDate
-      createdAt
-      updatedAt
-      isResolved
+      ...TodoActivityWithItemsFields
       createdBy {
         ...UserFields
-      }
-      items {
-        id
-        name
-        isResolved
-        createdAt
-        updatedAt
-        createdBy {
-          ...UserFields
-        }
       }
     }
   }
@@ -70,12 +28,10 @@ mutation CreateTodoActivity($name: String!, $dueDate: DateTime, $items: [ItemInp
 mutation UpdateTodoActivity($id: UUID!, $name: String!, $dueDate: DateTime) {
   updateActivity(id: $id, name: $name, dueDate: $dueDate) {
     activity {
-      id
-      name
-      dueDate
-      createdAt
-      updatedAt
-      isResolved
+      ...TodoActivityWithItemsFields
+      createdBy {
+        ...UserFields
+      }
     }
     errors
   }
@@ -91,11 +47,10 @@ mutation DeleteTodoActivity($id: UUID!) {
 mutation CompleteTodoActivity($id: UUID!, $isResolved: Boolean!) {
   completeActivity(id: $id, isResolved: $isResolved) {
     activity {
-      id
-      name
-      createdAt
-      updatedAt
-      isResolved
+      ...TodoActivityWithItemsFields
+      createdBy {
+        ...UserFields
+      }
     }
     errors
   }
@@ -112,15 +67,7 @@ mutation CreateTodoItem(
     isResolved: $isResolved
   ) {
     item {
-      id
-      name
-      createdAt
-      updatedAt
-      isResolved
-      activity {
-        id
-        name
-      }
+      ...TodoItemFields
     }
     errors
   }
@@ -139,15 +86,7 @@ mutation UpdateTodoItem(
     isResolved: $isResolved
   ) {
     item {
-      id
-      name
-      createdAt
-      updatedAt
-      isResolved
-      activity {
-        id
-        name
-      }
+      ...TodoItemFields
     }
     errors
   }
@@ -157,5 +96,32 @@ mutation DeleteTodoItem($id: UUID!) {
   deleteItem(id: $id) {
     success
     errors
+  }
+}
+
+fragment TodoItemFields on ItemType {
+  id
+  name
+  createdAt
+  updatedAt
+  isResolved
+  activity {
+    id
+    name
+  }
+  createdBy {
+    ...UserFields
+  }
+}
+
+fragment TodoActivityWithItemsFields on ActivityType {
+  id
+  name
+  dueDate
+  createdAt
+  updatedAt
+  isResolved
+  items {
+    ...TodoItemFields
   }
 }

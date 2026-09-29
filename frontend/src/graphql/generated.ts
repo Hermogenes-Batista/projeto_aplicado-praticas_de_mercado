@@ -1,25 +1,14 @@
-import { TypedDocumentNode as DocumentNode } from "@graphql-typed-document-node/core";
-import { parse } from "graphql";
-export type Maybe<T> = T | null;
-export type InputMaybe<T> = Maybe<T>;
-export type Exact<T extends { [key: string]: unknown }> = {
-  [K in keyof T]: T[K];
-};
-export type MakeOptional<T, K extends keyof T> = Omit<T, K> & {
-  [SubKey in K]?: Maybe<T[SubKey]>;
-};
-export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & {
-  [SubKey in K]: Maybe<T[SubKey]>;
-};
-export type MakeEmpty<
-  T extends { [key: string]: unknown },
-  K extends keyof T,
-> = { [_ in K]?: never };
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
+/** Internal type. DO NOT USE DIRECTLY. */
 export type Incremental<T> =
   | T
   | {
       [P in keyof T]?: P extends " $fragmentName" | "__typename" ? T[P] : never;
     };
+import { TypedDocumentNode as DocumentNode } from "@graphql-typed-document-node/core";
+export type Maybe<T> = T | null;
+export type InputMaybe<T> = Maybe<T>;
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
   ID: { input: string; output: string };
@@ -27,15 +16,15 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean };
   Int: { input: number; output: number };
   Float: { input: number; output: number };
-  DateTime: { input: any; output: any };
-  UUID: { input: any; output: any };
+  DateTime: { input: string; output: string };
+  UUID: { input: string; output: string };
 };
 
 export type ActivityType = {
   __typename?: "ActivityType";
   createdAt: Scalars["DateTime"]["output"];
   createdBy: UserType;
-  dueDate: Maybe<Scalars["DateTime"]["output"]>;
+  dueDate?: Maybe<Scalars["DateTime"]["output"]>;
   id: Scalars["UUID"]["output"];
   isResolved: Scalars["Boolean"]["output"];
   items: Array<ItemType>;
@@ -134,6 +123,7 @@ export type MutationRootCompleteActivityArgs = {
 };
 
 export type MutationRootCreateActivityArgs = {
+  dueDate?: InputMaybe<Scalars["DateTime"]["input"]>;
   items?: InputMaybe<Array<ItemInput>>;
   name: Scalars["String"]["input"];
 };
@@ -171,6 +161,7 @@ export type MutationRootLogoutArgs = {
 };
 
 export type MutationRootUpdateActivityArgs = {
+  dueDate?: InputMaybe<Scalars["DateTime"]["input"]>;
   id: Scalars["UUID"]["input"];
   name: Scalars["String"]["input"];
 };
@@ -229,10 +220,8 @@ export type UserType = {
 export type CurrentUserQueryVariables = Exact<{ [key: string]: never }>;
 
 export type CurrentUserQuery = {
-  __typename?: "QueryRoot";
-  me?: {
-    __typename?: "UserType";
-    id: any;
+  me: {
+    id: string;
     username: string;
     email: string;
     firstName: string;
@@ -242,21 +231,18 @@ export type CurrentUserQuery = {
 };
 
 export type AuthenticateUserMutationVariables = Exact<{
-  username: Scalars["String"]["input"];
-  password: Scalars["String"]["input"];
+  username: string;
+  password: string;
 }>;
 
 export type AuthenticateUserMutation = {
-  __typename?: "MutationRoot";
-  login?: {
-    __typename?: "LoginMutation";
+  login: {
     success: boolean;
     errors: Array<string | null>;
-    access?: string | null;
-    refresh?: string | null;
-    user?: {
-      __typename?: "UserType";
-      id: any;
+    access: string | null;
+    refresh: string | null;
+    user: {
+      id: string;
       username: string;
       email: string;
       firstName: string;
@@ -269,54 +255,41 @@ export type AuthenticateUserMutation = {
 export type EndSessionMutationVariables = Exact<{ [key: string]: never }>;
 
 export type EndSessionMutation = {
-  __typename?: "MutationRoot";
-  logout?: {
-    __typename?: "LogoutMutation";
-    success: boolean;
-    errors: Array<string | null>;
-  } | null;
+  logout: { success: boolean; errors: Array<string | null> } | null;
 };
 
 export type RefreshSessionMutationVariables = Exact<{ [key: string]: never }>;
 
 export type RefreshSessionMutation = {
-  __typename?: "MutationRoot";
-  refreshToken?: {
-    __typename?: "RefreshToken";
+  refreshToken: {
     success: boolean;
     errors: Array<string | null>;
-    access?: string | null;
-    refresh?: string | null;
+    access: string | null;
+    refresh: string | null;
   } | null;
 };
 
 export type GoogleConfigQueryVariables = Exact<{ [key: string]: never }>;
 
-export type GoogleConfigQuery = {
-  __typename?: "QueryRoot";
-  googleClientId: string;
-};
+export type GoogleConfigQuery = { googleClientId: string };
 
 export type AuthenticateGoogleMutationVariables = Exact<{
-  credential?: InputMaybe<Scalars["String"]["input"]>;
-  code?: InputMaybe<Scalars["String"]["input"]>;
-  redirectUri?: InputMaybe<Scalars["String"]["input"]>;
-  demo?: InputMaybe<Scalars["Boolean"]["input"]>;
-  email?: InputMaybe<Scalars["String"]["input"]>;
-  name?: InputMaybe<Scalars["String"]["input"]>;
+  credential?: string | null | undefined;
+  code?: string | null | undefined;
+  redirectUri?: string | null | undefined;
+  demo?: boolean | null | undefined;
+  email?: string | null | undefined;
+  name?: string | null | undefined;
 }>;
 
 export type AuthenticateGoogleMutation = {
-  __typename?: "MutationRoot";
-  loginWithGoogle?: {
-    __typename?: "GoogleLoginMutation";
+  loginWithGoogle: {
     success: boolean;
     errors: Array<string | null>;
-    access?: string | null;
-    refresh?: string | null;
-    user?: {
-      __typename?: "UserType";
-      id: any;
+    access: string | null;
+    refresh: string | null;
+    user: {
+      id: string;
       username: string;
       email: string;
       firstName: string;
@@ -327,8 +300,7 @@ export type AuthenticateGoogleMutation = {
 };
 
 export type UserFieldsFragment = {
-  __typename?: "UserType";
-  id: any;
+  id: string;
   username: string;
   email: string;
   firstName: string;
@@ -337,37 +309,40 @@ export type UserFieldsFragment = {
 };
 
 export type TodoItemsQueryVariables = Exact<{
-  isResolved?: InputMaybe<Scalars["Boolean"]["input"]>;
+  isResolved?: boolean | null | undefined;
 }>;
 
 export type TodoItemsQuery = {
-  __typename?: "QueryRoot";
   items: Array<{
-    __typename?: "ItemType";
-    id: any;
+    id: string;
     name: string;
-    createdAt: any;
-    updatedAt: any;
+    createdAt: string;
+    updatedAt: string;
     isResolved: boolean;
-    activity: { __typename?: "ActivityType"; id: any; name: string };
+    activity: { id: string; name: string };
+    createdBy: {
+      id: string;
+      username: string;
+      email: string;
+      firstName: string;
+      lastName: string;
+      isStaff: boolean;
+    };
   } | null>;
 };
 
 export type TodoActivitiesQueryVariables = Exact<{ [key: string]: never }>;
 
 export type TodoActivitiesQuery = {
-  __typename?: "QueryRoot";
   activities: Array<{
-    __typename?: "ActivityType";
-    id: any;
+    id: string;
     name: string;
-    dueDate: Maybe<Scalars["DateTime"]["output"]>;
-    createdAt: any;
-    updatedAt: any;
+    dueDate: string | null;
+    createdAt: string;
+    updatedAt: string;
     isResolved: boolean;
     createdBy: {
-      __typename?: "UserType";
-      id: any;
+      id: string;
       username: string;
       email: string;
       firstName: string;
@@ -375,48 +350,42 @@ export type TodoActivitiesQuery = {
       isStaff: boolean;
     };
     items: Array<{
-      __typename?: "ItemType";
-      id: any;
+      id: string;
       name: string;
-      createdAt: any;
-      updatedAt: any;
+      createdAt: string;
+      updatedAt: string;
       isResolved: boolean;
+      activity: { id: string; name: string };
       createdBy: {
-        __typename?: "UserType";
-        id: any;
+        id: string;
         username: string;
         email: string;
         firstName: string;
         lastName: string;
         isStaff: boolean;
       };
-      activity: { __typename?: "ActivityType"; id: any; name: string };
     }>;
   } | null>;
 };
 
 export type CreateTodoActivityMutationVariables = Exact<{
-  name: Scalars["String"]["input"];
-  dueDate?: InputMaybe<Scalars["DateTime"]["input"]>;
-  items?: InputMaybe<Array<ItemInput> | ItemInput>;
+  name: string;
+  dueDate?: string | null | undefined;
+  items?: Array<ItemInput> | ItemInput | null | undefined;
 }>;
 
 export type CreateTodoActivityMutation = {
-  __typename?: "MutationRoot";
-  createActivity?: {
-    __typename?: "CreateActivity";
+  createActivity: {
     errors: Array<string | null>;
-    activity?: {
-      __typename?: "ActivityType";
-      id: any;
+    activity: {
+      id: string;
       name: string;
-      dueDate: Maybe<Scalars["DateTime"]["output"]>;
-      createdAt: any;
-      updatedAt: any;
+      dueDate: string | null;
+      createdAt: string;
+      updatedAt: string;
       isResolved: boolean;
       createdBy: {
-        __typename?: "UserType";
-        id: any;
+        id: string;
         username: string;
         email: string;
         firstName: string;
@@ -424,15 +393,14 @@ export type CreateTodoActivityMutation = {
         isStaff: boolean;
       };
       items: Array<{
-        __typename?: "ItemType";
-        id: any;
+        id: string;
         name: string;
+        createdAt: string;
+        updatedAt: string;
         isResolved: boolean;
-        createdAt: any;
-        updatedAt: any;
+        activity: { id: string; name: string };
         createdBy: {
-          __typename?: "UserType";
-          id: any;
+          id: string;
           username: string;
           email: string;
           firstName: string;
@@ -445,120 +413,205 @@ export type CreateTodoActivityMutation = {
 };
 
 export type UpdateTodoActivityMutationVariables = Exact<{
-  id: Scalars["UUID"]["input"];
-  name: Scalars["String"]["input"];
-  dueDate?: InputMaybe<Scalars["DateTime"]["input"]>;
+  id: string;
+  name: string;
+  dueDate?: string | null | undefined;
 }>;
 
 export type UpdateTodoActivityMutation = {
-  __typename?: "MutationRoot";
-  updateActivity?: {
-    __typename?: "UpdateActivity";
+  updateActivity: {
     errors: Array<string | null>;
-    activity?: {
-      __typename?: "ActivityType";
-      id: any;
+    activity: {
+      id: string;
       name: string;
-      dueDate: Maybe<Scalars["DateTime"]["output"]>;
-      createdAt: any;
-      updatedAt: any;
+      dueDate: string | null;
+      createdAt: string;
+      updatedAt: string;
       isResolved: boolean;
+      createdBy: {
+        id: string;
+        username: string;
+        email: string;
+        firstName: string;
+        lastName: string;
+        isStaff: boolean;
+      };
+      items: Array<{
+        id: string;
+        name: string;
+        createdAt: string;
+        updatedAt: string;
+        isResolved: boolean;
+        activity: { id: string; name: string };
+        createdBy: {
+          id: string;
+          username: string;
+          email: string;
+          firstName: string;
+          lastName: string;
+          isStaff: boolean;
+        };
+      }>;
     } | null;
   } | null;
 };
 
 export type DeleteTodoActivityMutationVariables = Exact<{
-  id: Scalars["UUID"]["input"];
+  id: string;
 }>;
 
 export type DeleteTodoActivityMutation = {
-  __typename?: "MutationRoot";
-  deleteActivity?: {
-    __typename?: "DeleteActivity";
-    success: boolean;
-    errors: Array<string | null>;
-  } | null;
+  deleteActivity: { success: boolean; errors: Array<string | null> } | null;
 };
 
 export type CompleteTodoActivityMutationVariables = Exact<{
-  id: Scalars["UUID"]["input"];
-  isResolved: Scalars["Boolean"]["input"];
+  id: string;
+  isResolved: boolean;
 }>;
 
 export type CompleteTodoActivityMutation = {
-  __typename?: "MutationRoot";
-  completeActivity?: {
-    __typename?: "CompleteActivity";
+  completeActivity: {
     errors: Array<string | null>;
-    activity?: {
-      __typename?: "ActivityType";
-      id: any;
+    activity: {
+      id: string;
       name: string;
-      createdAt: any;
-      updatedAt: any;
+      dueDate: string | null;
+      createdAt: string;
+      updatedAt: string;
       isResolved: boolean;
+      createdBy: {
+        id: string;
+        username: string;
+        email: string;
+        firstName: string;
+        lastName: string;
+        isStaff: boolean;
+      };
+      items: Array<{
+        id: string;
+        name: string;
+        createdAt: string;
+        updatedAt: string;
+        isResolved: boolean;
+        activity: { id: string; name: string };
+        createdBy: {
+          id: string;
+          username: string;
+          email: string;
+          firstName: string;
+          lastName: string;
+          isStaff: boolean;
+        };
+      }>;
     } | null;
   } | null;
 };
 
 export type CreateTodoItemMutationVariables = Exact<{
-  name: Scalars["String"]["input"];
-  activityId: Scalars["UUID"]["input"];
-  isResolved?: InputMaybe<Scalars["Boolean"]["input"]>;
+  name: string;
+  activityId: string;
+  isResolved?: boolean | null | undefined;
 }>;
 
 export type CreateTodoItemMutation = {
-  __typename?: "MutationRoot";
-  createItem?: {
-    __typename?: "CreateItem";
+  createItem: {
     errors: Array<string | null>;
-    item?: {
-      __typename?: "ItemType";
-      id: any;
+    item: {
+      id: string;
       name: string;
-      createdAt: any;
-      updatedAt: any;
+      createdAt: string;
+      updatedAt: string;
       isResolved: boolean;
-      activity: { __typename?: "ActivityType"; id: any; name: string };
+      activity: { id: string; name: string };
+      createdBy: {
+        id: string;
+        username: string;
+        email: string;
+        firstName: string;
+        lastName: string;
+        isStaff: boolean;
+      };
     } | null;
   } | null;
 };
 
 export type UpdateTodoItemMutationVariables = Exact<{
-  id: Scalars["UUID"]["input"];
-  name: Scalars["String"]["input"];
-  activityId: Scalars["UUID"]["input"];
-  isResolved: Scalars["Boolean"]["input"];
+  id: string;
+  name: string;
+  activityId: string;
+  isResolved: boolean;
 }>;
 
 export type UpdateTodoItemMutation = {
-  __typename?: "MutationRoot";
-  updateItem?: {
-    __typename?: "UpdateItem";
+  updateItem: {
     errors: Array<string | null>;
-    item?: {
-      __typename?: "ItemType";
-      id: any;
+    item: {
+      id: string;
       name: string;
-      createdAt: any;
-      updatedAt: any;
+      createdAt: string;
+      updatedAt: string;
       isResolved: boolean;
-      activity: { __typename?: "ActivityType"; id: any; name: string };
+      activity: { id: string; name: string };
+      createdBy: {
+        id: string;
+        username: string;
+        email: string;
+        firstName: string;
+        lastName: string;
+        isStaff: boolean;
+      };
     } | null;
   } | null;
 };
 
 export type DeleteTodoItemMutationVariables = Exact<{
-  id: Scalars["UUID"]["input"];
+  id: string;
 }>;
 
 export type DeleteTodoItemMutation = {
-  __typename?: "MutationRoot";
-  deleteItem?: {
-    __typename?: "DeleteItem";
-    success: boolean;
-    errors: Array<string | null>;
-  } | null;
+  deleteItem: { success: boolean; errors: Array<string | null> } | null;
+};
+
+export type TodoItemFieldsFragment = {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  isResolved: boolean;
+  activity: { id: string; name: string };
+  createdBy: {
+    id: string;
+    username: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    isStaff: boolean;
+  };
+};
+
+export type TodoActivityWithItemsFieldsFragment = {
+  id: string;
+  name: string;
+  dueDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+  isResolved: boolean;
+  items: Array<{
+    id: string;
+    name: string;
+    createdAt: string;
+    updatedAt: string;
+    isResolved: boolean;
+    activity: { id: string; name: string };
+    createdBy: {
+      id: string;
+      username: string;
+      email: string;
+      firstName: string;
+      lastName: string;
+      isStaff: boolean;
+    };
+  }>;
 };
 
 export const UserFieldsFragmentDoc = {
@@ -585,6 +638,170 @@ export const UserFieldsFragmentDoc = {
     },
   ],
 } as unknown as DocumentNode<UserFieldsFragment, unknown>;
+export const TodoItemFieldsFragmentDoc = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "TodoItemFields" },
+      typeCondition: {
+        kind: "NamedType",
+        name: { kind: "Name", value: "ItemType" },
+      },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "name" } },
+          { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+          { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "isResolved" } },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "activity" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "name" } },
+              ],
+            },
+          },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createdBy" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "FragmentSpread",
+                  name: { kind: "Name", value: "UserFields" },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "UserFields" },
+      typeCondition: {
+        kind: "NamedType",
+        name: { kind: "Name", value: "UserType" },
+      },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "username" } },
+          { kind: "Field", name: { kind: "Name", value: "email" } },
+          { kind: "Field", name: { kind: "Name", value: "firstName" } },
+          { kind: "Field", name: { kind: "Name", value: "lastName" } },
+          { kind: "Field", name: { kind: "Name", value: "isStaff" } },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<TodoItemFieldsFragment, unknown>;
+export const TodoActivityWithItemsFieldsFragmentDoc = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "TodoActivityWithItemsFields" },
+      typeCondition: {
+        kind: "NamedType",
+        name: { kind: "Name", value: "ActivityType" },
+      },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "name" } },
+          { kind: "Field", name: { kind: "Name", value: "dueDate" } },
+          { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+          { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "isResolved" } },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "items" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "FragmentSpread",
+                  name: { kind: "Name", value: "TodoItemFields" },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "UserFields" },
+      typeCondition: {
+        kind: "NamedType",
+        name: { kind: "Name", value: "UserType" },
+      },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "username" } },
+          { kind: "Field", name: { kind: "Name", value: "email" } },
+          { kind: "Field", name: { kind: "Name", value: "firstName" } },
+          { kind: "Field", name: { kind: "Name", value: "lastName" } },
+          { kind: "Field", name: { kind: "Name", value: "isStaff" } },
+        ],
+      },
+    },
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "TodoItemFields" },
+      typeCondition: {
+        kind: "NamedType",
+        name: { kind: "Name", value: "ItemType" },
+      },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "name" } },
+          { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+          { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "isResolved" } },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "activity" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "name" } },
+              ],
+            },
+          },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createdBy" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "FragmentSpread",
+                  name: { kind: "Name", value: "UserFields" },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<TodoActivityWithItemsFieldsFragment, unknown>;
 export const CurrentUserDocument = {
   kind: "Document",
   definitions: [
@@ -1006,21 +1223,70 @@ export const TodoItemsDocument = {
             selectionSet: {
               kind: "SelectionSet",
               selections: [
+                {
+                  kind: "FragmentSpread",
+                  name: { kind: "Name", value: "TodoItemFields" },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "UserFields" },
+      typeCondition: {
+        kind: "NamedType",
+        name: { kind: "Name", value: "UserType" },
+      },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "username" } },
+          { kind: "Field", name: { kind: "Name", value: "email" } },
+          { kind: "Field", name: { kind: "Name", value: "firstName" } },
+          { kind: "Field", name: { kind: "Name", value: "lastName" } },
+          { kind: "Field", name: { kind: "Name", value: "isStaff" } },
+        ],
+      },
+    },
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "TodoItemFields" },
+      typeCondition: {
+        kind: "NamedType",
+        name: { kind: "Name", value: "ItemType" },
+      },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "name" } },
+          { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+          { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "isResolved" } },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "activity" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
                 { kind: "Field", name: { kind: "Name", value: "id" } },
                 { kind: "Field", name: { kind: "Name", value: "name" } },
-                { kind: "Field", name: { kind: "Name", value: "createdAt" } },
-                { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
-                { kind: "Field", name: { kind: "Name", value: "isResolved" } },
+              ],
+            },
+          },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createdBy" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
                 {
-                  kind: "Field",
-                  name: { kind: "Name", value: "activity" },
-                  selectionSet: {
-                    kind: "SelectionSet",
-                    selections: [
-                      { kind: "Field", name: { kind: "Name", value: "id" } },
-                      { kind: "Field", name: { kind: "Name", value: "name" } },
-                    ],
-                  },
+                  kind: "FragmentSpread",
+                  name: { kind: "Name", value: "UserFields" },
                 },
               ],
             },
@@ -1030,24 +1296,565 @@ export const TodoItemsDocument = {
     },
   ],
 } as unknown as DocumentNode<TodoItemsQuery, TodoItemsQueryVariables>;
-export const TodoActivitiesDocument = parse(
-  "query TodoActivities {\n  activities {\n    id\n    name\n    dueDate\n    createdAt\n    updatedAt\n    isResolved\n    createdBy {\n      ...UserFields\n    }\n    items {\n      id\n      name\n      createdAt\n      updatedAt\n      isResolved\n      createdBy {\n        ...UserFields\n      }\n      activity {\n        id\n        name\n      }\n    }\n  }\n}\n\nfragment UserFields on UserType {\n  id\n  username\n  email\n  firstName\n  lastName\n  isStaff\n}",
-) as unknown as DocumentNode<TodoActivitiesQuery, TodoActivitiesQueryVariables>;
-
-export const CreateTodoActivityDocument = parse(
-  "mutation CreateTodoActivity($name: String!, $dueDate: DateTime, $items: [ItemInput!]) {\n  createActivity(name: $name, dueDate: $dueDate, items: $items) {\n    errors\n    activity {\n      id\n      name\n      dueDate\n      createdAt\n      updatedAt\n      isResolved\n      createdBy {\n        ...UserFields\n      }\n      items {\n        id\n        name\n        isResolved\n        createdAt\n        updatedAt\n        createdBy {\n          ...UserFields\n        }\n      }\n    }\n  }\n}\n\nfragment UserFields on UserType {\n  id\n  username\n  email\n  firstName\n  lastName\n  isStaff\n}",
-) as unknown as DocumentNode<
+export const TodoActivitiesDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "TodoActivities" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "activities" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "FragmentSpread",
+                  name: { kind: "Name", value: "TodoActivityWithItemsFields" },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "createdBy" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      {
+                        kind: "FragmentSpread",
+                        name: { kind: "Name", value: "UserFields" },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "UserFields" },
+      typeCondition: {
+        kind: "NamedType",
+        name: { kind: "Name", value: "UserType" },
+      },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "username" } },
+          { kind: "Field", name: { kind: "Name", value: "email" } },
+          { kind: "Field", name: { kind: "Name", value: "firstName" } },
+          { kind: "Field", name: { kind: "Name", value: "lastName" } },
+          { kind: "Field", name: { kind: "Name", value: "isStaff" } },
+        ],
+      },
+    },
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "TodoItemFields" },
+      typeCondition: {
+        kind: "NamedType",
+        name: { kind: "Name", value: "ItemType" },
+      },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "name" } },
+          { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+          { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "isResolved" } },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "activity" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "name" } },
+              ],
+            },
+          },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createdBy" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "FragmentSpread",
+                  name: { kind: "Name", value: "UserFields" },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "TodoActivityWithItemsFields" },
+      typeCondition: {
+        kind: "NamedType",
+        name: { kind: "Name", value: "ActivityType" },
+      },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "name" } },
+          { kind: "Field", name: { kind: "Name", value: "dueDate" } },
+          { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+          { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "isResolved" } },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "items" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "FragmentSpread",
+                  name: { kind: "Name", value: "TodoItemFields" },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<TodoActivitiesQuery, TodoActivitiesQueryVariables>;
+export const CreateTodoActivityDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "CreateTodoActivity" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "name" } },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "String" },
+            },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "dueDate" },
+          },
+          type: {
+            kind: "NamedType",
+            name: { kind: "Name", value: "DateTime" },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "items" },
+          },
+          type: {
+            kind: "ListType",
+            type: {
+              kind: "NonNullType",
+              type: {
+                kind: "NamedType",
+                name: { kind: "Name", value: "ItemInput" },
+              },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createActivity" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "name" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "name" },
+                },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "dueDate" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "dueDate" },
+                },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "items" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "items" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "errors" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "activity" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      {
+                        kind: "FragmentSpread",
+                        name: {
+                          kind: "Name",
+                          value: "TodoActivityWithItemsFields",
+                        },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "createdBy" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            {
+                              kind: "FragmentSpread",
+                              name: { kind: "Name", value: "UserFields" },
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "UserFields" },
+      typeCondition: {
+        kind: "NamedType",
+        name: { kind: "Name", value: "UserType" },
+      },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "username" } },
+          { kind: "Field", name: { kind: "Name", value: "email" } },
+          { kind: "Field", name: { kind: "Name", value: "firstName" } },
+          { kind: "Field", name: { kind: "Name", value: "lastName" } },
+          { kind: "Field", name: { kind: "Name", value: "isStaff" } },
+        ],
+      },
+    },
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "TodoItemFields" },
+      typeCondition: {
+        kind: "NamedType",
+        name: { kind: "Name", value: "ItemType" },
+      },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "name" } },
+          { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+          { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "isResolved" } },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "activity" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "name" } },
+              ],
+            },
+          },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createdBy" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "FragmentSpread",
+                  name: { kind: "Name", value: "UserFields" },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "TodoActivityWithItemsFields" },
+      typeCondition: {
+        kind: "NamedType",
+        name: { kind: "Name", value: "ActivityType" },
+      },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "name" } },
+          { kind: "Field", name: { kind: "Name", value: "dueDate" } },
+          { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+          { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "isResolved" } },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "items" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "FragmentSpread",
+                  name: { kind: "Name", value: "TodoItemFields" },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
   CreateTodoActivityMutation,
   CreateTodoActivityMutationVariables
 >;
-
-export const UpdateTodoActivityDocument = parse(
-  "mutation UpdateTodoActivity($id: UUID!, $name: String!, $dueDate: DateTime) {\n  updateActivity(id: $id, name: $name, dueDate: $dueDate) {\n    activity {\n      id\n      name\n      dueDate\n      createdAt\n      updatedAt\n      isResolved\n    }\n    errors\n  }\n}",
-) as unknown as DocumentNode<
+export const UpdateTodoActivityDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "UpdateTodoActivity" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "UUID" } },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "name" } },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "String" },
+            },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "dueDate" },
+          },
+          type: {
+            kind: "NamedType",
+            name: { kind: "Name", value: "DateTime" },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "updateActivity" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "id" },
+                },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "name" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "name" },
+                },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "dueDate" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "dueDate" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "activity" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      {
+                        kind: "FragmentSpread",
+                        name: {
+                          kind: "Name",
+                          value: "TodoActivityWithItemsFields",
+                        },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "createdBy" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            {
+                              kind: "FragmentSpread",
+                              name: { kind: "Name", value: "UserFields" },
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                },
+                { kind: "Field", name: { kind: "Name", value: "errors" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "UserFields" },
+      typeCondition: {
+        kind: "NamedType",
+        name: { kind: "Name", value: "UserType" },
+      },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "username" } },
+          { kind: "Field", name: { kind: "Name", value: "email" } },
+          { kind: "Field", name: { kind: "Name", value: "firstName" } },
+          { kind: "Field", name: { kind: "Name", value: "lastName" } },
+          { kind: "Field", name: { kind: "Name", value: "isStaff" } },
+        ],
+      },
+    },
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "TodoItemFields" },
+      typeCondition: {
+        kind: "NamedType",
+        name: { kind: "Name", value: "ItemType" },
+      },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "name" } },
+          { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+          { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "isResolved" } },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "activity" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "name" } },
+              ],
+            },
+          },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createdBy" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "FragmentSpread",
+                  name: { kind: "Name", value: "UserFields" },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "TodoActivityWithItemsFields" },
+      typeCondition: {
+        kind: "NamedType",
+        name: { kind: "Name", value: "ActivityType" },
+      },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "name" } },
+          { kind: "Field", name: { kind: "Name", value: "dueDate" } },
+          { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+          { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "isResolved" } },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "items" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "FragmentSpread",
+                  name: { kind: "Name", value: "TodoItemFields" },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
   UpdateTodoActivityMutation,
   UpdateTodoActivityMutationVariables
 >;
-
 export const DeleteTodoActivityDocument = {
   kind: "Document",
   definitions: [
@@ -1161,24 +1968,123 @@ export const CompleteTodoActivityDocument = {
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
-                      { kind: "Field", name: { kind: "Name", value: "id" } },
-                      { kind: "Field", name: { kind: "Name", value: "name" } },
                       {
-                        kind: "Field",
-                        name: { kind: "Name", value: "createdAt" },
+                        kind: "FragmentSpread",
+                        name: {
+                          kind: "Name",
+                          value: "TodoActivityWithItemsFields",
+                        },
                       },
                       {
                         kind: "Field",
-                        name: { kind: "Name", value: "updatedAt" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "isResolved" },
+                        name: { kind: "Name", value: "createdBy" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            {
+                              kind: "FragmentSpread",
+                              name: { kind: "Name", value: "UserFields" },
+                            },
+                          ],
+                        },
                       },
                     ],
                   },
                 },
                 { kind: "Field", name: { kind: "Name", value: "errors" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "UserFields" },
+      typeCondition: {
+        kind: "NamedType",
+        name: { kind: "Name", value: "UserType" },
+      },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "username" } },
+          { kind: "Field", name: { kind: "Name", value: "email" } },
+          { kind: "Field", name: { kind: "Name", value: "firstName" } },
+          { kind: "Field", name: { kind: "Name", value: "lastName" } },
+          { kind: "Field", name: { kind: "Name", value: "isStaff" } },
+        ],
+      },
+    },
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "TodoItemFields" },
+      typeCondition: {
+        kind: "NamedType",
+        name: { kind: "Name", value: "ItemType" },
+      },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "name" } },
+          { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+          { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "isResolved" } },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "activity" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "name" } },
+              ],
+            },
+          },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createdBy" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "FragmentSpread",
+                  name: { kind: "Name", value: "UserFields" },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "TodoActivityWithItemsFields" },
+      typeCondition: {
+        kind: "NamedType",
+        name: { kind: "Name", value: "ActivityType" },
+      },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "name" } },
+          { kind: "Field", name: { kind: "Name", value: "dueDate" } },
+          { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+          { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "isResolved" } },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "items" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "FragmentSpread",
+                  name: { kind: "Name", value: "TodoItemFields" },
+                },
               ],
             },
           },
@@ -1270,41 +2176,75 @@ export const CreateTodoItemDocument = {
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
-                      { kind: "Field", name: { kind: "Name", value: "id" } },
-                      { kind: "Field", name: { kind: "Name", value: "name" } },
                       {
-                        kind: "Field",
-                        name: { kind: "Name", value: "createdAt" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "updatedAt" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "isResolved" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "activity" },
-                        selectionSet: {
-                          kind: "SelectionSet",
-                          selections: [
-                            {
-                              kind: "Field",
-                              name: { kind: "Name", value: "id" },
-                            },
-                            {
-                              kind: "Field",
-                              name: { kind: "Name", value: "name" },
-                            },
-                          ],
-                        },
+                        kind: "FragmentSpread",
+                        name: { kind: "Name", value: "TodoItemFields" },
                       },
                     ],
                   },
                 },
                 { kind: "Field", name: { kind: "Name", value: "errors" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "UserFields" },
+      typeCondition: {
+        kind: "NamedType",
+        name: { kind: "Name", value: "UserType" },
+      },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "username" } },
+          { kind: "Field", name: { kind: "Name", value: "email" } },
+          { kind: "Field", name: { kind: "Name", value: "firstName" } },
+          { kind: "Field", name: { kind: "Name", value: "lastName" } },
+          { kind: "Field", name: { kind: "Name", value: "isStaff" } },
+        ],
+      },
+    },
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "TodoItemFields" },
+      typeCondition: {
+        kind: "NamedType",
+        name: { kind: "Name", value: "ItemType" },
+      },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "name" } },
+          { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+          { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "isResolved" } },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "activity" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "name" } },
+              ],
+            },
+          },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createdBy" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "FragmentSpread",
+                  name: { kind: "Name", value: "UserFields" },
+                },
               ],
             },
           },
@@ -1418,41 +2358,75 @@ export const UpdateTodoItemDocument = {
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
-                      { kind: "Field", name: { kind: "Name", value: "id" } },
-                      { kind: "Field", name: { kind: "Name", value: "name" } },
                       {
-                        kind: "Field",
-                        name: { kind: "Name", value: "createdAt" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "updatedAt" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "isResolved" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "activity" },
-                        selectionSet: {
-                          kind: "SelectionSet",
-                          selections: [
-                            {
-                              kind: "Field",
-                              name: { kind: "Name", value: "id" },
-                            },
-                            {
-                              kind: "Field",
-                              name: { kind: "Name", value: "name" },
-                            },
-                          ],
-                        },
+                        kind: "FragmentSpread",
+                        name: { kind: "Name", value: "TodoItemFields" },
                       },
                     ],
                   },
                 },
                 { kind: "Field", name: { kind: "Name", value: "errors" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "UserFields" },
+      typeCondition: {
+        kind: "NamedType",
+        name: { kind: "Name", value: "UserType" },
+      },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "username" } },
+          { kind: "Field", name: { kind: "Name", value: "email" } },
+          { kind: "Field", name: { kind: "Name", value: "firstName" } },
+          { kind: "Field", name: { kind: "Name", value: "lastName" } },
+          { kind: "Field", name: { kind: "Name", value: "isStaff" } },
+        ],
+      },
+    },
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "TodoItemFields" },
+      typeCondition: {
+        kind: "NamedType",
+        name: { kind: "Name", value: "ItemType" },
+      },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "name" } },
+          { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+          { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
+          { kind: "Field", name: { kind: "Name", value: "isResolved" } },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "activity" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "name" } },
+              ],
+            },
+          },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createdBy" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "FragmentSpread",
+                  name: { kind: "Name", value: "UserFields" },
+                },
               ],
             },
           },

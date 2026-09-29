@@ -9,7 +9,6 @@ interface ActivityCountdownProps {
 
 export default function ActivityCountdown({ dueDate }: ActivityCountdownProps) {
   const [now, setNow] = useState<number | null>(null);
-
   useEffect(() => {
     setNow(Date.now());
     const timer = window.setInterval(() => setNow(Date.now()), 60_000);

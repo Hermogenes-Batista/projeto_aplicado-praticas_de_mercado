@@ -1,5 +1,9 @@
 schema: graphql-schema.json
 documents: src/graphql/**/*.graphql
+config:
+  scalars:
+    DateTime: string
+    UUID: string
 generates:
   src/graphql/generated.ts:
     plugins:
