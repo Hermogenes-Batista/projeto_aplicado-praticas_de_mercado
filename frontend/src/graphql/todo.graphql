@@ -16,6 +16,7 @@ query TodoActivities {
   activities {
     id
     name
+    dueDate
     createdAt
     updatedAt
     isResolved
@@ -39,12 +40,13 @@ query TodoActivities {
   }
 }
 
-mutation CreateTodoActivity($name: String!, $items: [ItemInput!]) {
-  createActivity(name: $name, items: $items) {
+mutation CreateTodoActivity($name: String!, $dueDate: DateTime, $items: [ItemInput!]) {
+  createActivity(name: $name, dueDate: $dueDate, items: $items) {
     errors
     activity {
       id
       name
+      dueDate
       createdAt
       updatedAt
       isResolved
@@ -65,11 +67,12 @@ mutation CreateTodoActivity($name: String!, $items: [ItemInput!]) {
   }
 }
 
-mutation UpdateTodoActivity($id: UUID!, $name: String!) {
-  updateActivity(id: $id, name: $name) {
+mutation UpdateTodoActivity($id: UUID!, $name: String!, $dueDate: DateTime) {
+  updateActivity(id: $id, name: $name, dueDate: $dueDate) {
     activity {
       id
       name
+      dueDate
       createdAt
       updatedAt
       isResolved

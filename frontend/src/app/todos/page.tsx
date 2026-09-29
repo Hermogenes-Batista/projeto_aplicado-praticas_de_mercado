@@ -41,6 +41,9 @@ import NextLink from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import ThemeSelector from "@/components/ThemeSelector";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import ActivityCountdown from "@/components/ActivityCountdown";
+import ActivityDueDateField from "@/components/ActivityDueDateField";
+import { fromDateTimeLocal, toDateTimeLocal } from "@/utils/activityDueDate";
 import {
   CreateTodoActivityDocument,
   CreateTodoActivityMutation,
@@ -98,6 +101,7 @@ export default function TodosPage() {
     isResolved: false,
   });
   const [activityName, setActivityName] = useState("");
+  const [activityDueDate, setActivityDueDate] = useState("");
   const [activityId, setActivityId] = useState<string | undefined>();
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
@@ -217,6 +221,7 @@ export default function TodosPage() {
             CreateTodoActivityDocument,
             {
               name: activityName.trim(),
+              dueDate: fromDateTimeLocal(activityDueDate),
               items: newActivityItems, // Passa a lista local criada no formulário aninhado
             },
           );
@@ -226,7 +231,11 @@ export default function TodosPage() {
         const data =
           await requestAuthenticatedGraphQL<UpdateTodoActivityMutation>(
             UpdateTodoActivityDocument,
-            { id: activityId, name: activityName.trim() },
+            {
+              id: activityId,
+              name: activityName.trim(),
+              dueDate: fromDateTimeLocal(activityDueDate),
+            },
           );
         const errors = mutationErrors(data.updateActivity?.errors);
         if (errors) throw new Error(errors);
@@ -378,6 +387,7 @@ export default function TodosPage() {
   const openActivity = (Activity?: TodoActivities) => {
     setActivityId(Activity?.id);
     setActivityName(Activity?.name || "");
+    setActivityDueDate(toDateTimeLocal(Activity?.dueDate));
     setNewActivityItems([]);
     setTempItemName("");
     setActivityDialogMode(Activity ? "edit" : "create");
@@ -683,6 +693,7 @@ export default function TodosPage() {
                     <Typography variant="body2" color="text.secondary">
                       {activityItems.length} item(ns)
                     </Typography>
+                    <ActivityCountdown dueDate={activity.dueDate} />
                   </Box>
                   <Stack direction="row" spacing={1}>
                     <Button
@@ -778,6 +789,12 @@ export default function TodosPage() {
               onChange={(event) => setActivityName(event.target.value)}
               autoFocus
               fullWidth
+            />
+            <ActivityDueDateField
+              label="Prazo (opcional)"
+              value={activityDueDate}
+              onChange={setActivityDueDate}
+              helperText="A contagem regressiva mostra dias e, nas últimas 24 horas, horas."
             />
 
             {/* Apenas exibe o formulário de itens se estiver criando uma nova atividade */}
@@ -878,39 +895,6 @@ export default function TodosPage() {
           }
         }}
       />
-
-      <Dialog
-        open={activityDialogOpen}
-        onClose={() => setActivityDialogOpen(false)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>
-          {activityDialogMode === "create"
-            ? "Nova atividade"
-            : "Editar atividade"}
-        </DialogTitle>
-        <DialogContent>
-          <TextField
-            label="Nome"
-            value={activityName}
-            onChange={(event) => setActivityName(event.target.value)}
-            autoFocus
-            fullWidth
-            sx={{ mt: 1 }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setActivityDialogOpen(false)}>Cancelar</Button>
-          <Button
-            onClick={() => void saveActivity()}
-            variant="contained"
-            disabled={saving}
-          >
-            Salvar
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Container>
   );
 }

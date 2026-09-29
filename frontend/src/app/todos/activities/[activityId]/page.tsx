@@ -27,11 +27,15 @@ import SaveIcon from "@mui/icons-material/Save";
 import AddIcon from "@mui/icons-material/Add";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import EditIcon from "@mui/icons-material/Edit";
+import ScheduleIcon from "@mui/icons-material/Schedule";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import NextLink from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import ActivityCountdown from "@/components/ActivityCountdown";
+import ActivityDueDateField from "@/components/ActivityDueDateField";
+import { fromDateTimeLocal, toDateTimeLocal } from "@/utils/activityDueDate";
 import {
   CompleteTodoActivityDocument,
   CompleteTodoActivityMutation,
@@ -67,7 +71,9 @@ export default function ActivityTodosPage() {
   const [activity, setActivity] = useState<Activity | null>(null);
   const [items, setItems] = useState<TodoItem[]>([]);
   const [activityName, setActivityName] = useState("");
+  const [activityDueDate, setActivityDueDate] = useState("");
   const [editingActivityName, setEditingActivityName] = useState(false);
+  const [editingDueDate, setEditingDueDate] = useState(false);
   const [newItemName, setNewItemName] = useState("");
   const [pendingItems, setPendingItems] = useState<string[]>([]);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
@@ -105,6 +111,7 @@ export default function ActivityTodosPage() {
       }
       setActivity(selectedActivity);
       setActivityName(selectedActivity.name);
+      setActivityDueDate(toDateTimeLocal(selectedActivity.dueDate));
       setItems(selectedActivity.items);
     } catch (cause) {
       setError(
@@ -129,6 +136,7 @@ export default function ActivityTodosPage() {
       if (isNewActivity) {
         const variables = {
           name: activityName.trim(),
+          dueDate: fromDateTimeLocal(activityDueDate),
           items: pendingItems.map((itemName) => {
             return { name: itemName, isResolved: false };
           }),
@@ -151,7 +159,11 @@ export default function ActivityTodosPage() {
       const data =
         await requestAuthenticatedGraphQL<UpdateTodoActivityMutation>(
           UpdateTodoActivityDocument,
-          { id: activity!.id, name: activityName.trim() },
+          {
+            id: activity!.id,
+            name: activityName.trim(),
+            dueDate: fromDateTimeLocal(activityDueDate),
+          },
         );
       const errors = errorsFrom(data.updateActivity?.errors);
       if (errors) throw new Error(errors);
@@ -160,6 +172,33 @@ export default function ActivityTodosPage() {
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : "Falha ao salvar a atividade.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveDueDate = async () => {
+    if (!activity) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const data =
+        await requestAuthenticatedGraphQL<UpdateTodoActivityMutation>(
+          UpdateTodoActivityDocument,
+          {
+            id: activity.id,
+            name: activity.name,
+            dueDate: fromDateTimeLocal(activityDueDate),
+          },
+        );
+      const errors = errorsFrom(data.updateActivity?.errors);
+      if (errors) throw new Error(errors);
+      setEditingDueDate(false);
+      await loadActivity();
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "Falha ao salvar o prazo.",
       );
     } finally {
       setSaving(false);
@@ -354,7 +393,7 @@ export default function ActivityTodosPage() {
               </Typography>
               {isNewActivity || editingActivityName ? (
                 <Stack
-                  direction={{ xs: "column", sm: "row" }}
+                  direction={{ xs: "column", sm: "column" }}
                   spacing={2}
                   sx={{ mt: 1 }}
                 >
@@ -374,6 +413,14 @@ export default function ActivityTodosPage() {
                     autoFocus
                     label="Nome da atividade"
                   />
+                  {isNewActivity && (
+                    <ActivityDueDateField
+                      label="Prazo (opcional)"
+                      value={activityDueDate}
+                      onChange={setActivityDueDate}
+                      helperText="Nas últimas 24 horas, a contagem regressiva mostra horas."
+                    />
+                  )}
                   <Stack direction="row" spacing={1}>
                     <Button
                       variant="contained"
@@ -430,6 +477,70 @@ export default function ActivityTodosPage() {
                     disabled={saving || !items.length}
                   >
                     {activity!.isResolved ? "Concluída" : "Concluir atividade"}
+                  </Button>
+                </Stack>
+              )}
+              {!isNewActivity && !editingActivityName && (
+                <Stack
+                  direction={{ xs: "column", sm: "row" }}
+                  alignItems={{ sm: "center" }}
+                  spacing={1}
+                  sx={{ mt: 2 }}
+                >
+                  <ScheduleIcon color="action" fontSize="small" />
+                  <Typography variant="body2" color="text.secondary">
+                    Prazo:
+                  </Typography>
+                  {activity!.dueDate ? (
+                    <ActivityCountdown dueDate={activity!.dueDate} />
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      Sem prazo definido
+                    </Typography>
+                  )}
+                  {!editingDueDate && (
+                    <Button
+                      size="small"
+                      onClick={() => {
+                        setActivityDueDate(toDateTimeLocal(activity!.dueDate));
+                        setEditingDueDate(true);
+                      }}
+                      disabled={saving}
+                    >
+                      {activity!.dueDate ? "Editar prazo" : "Definir prazo"}
+                    </Button>
+                  )}
+                </Stack>
+              )}
+              {!isNewActivity && editingDueDate && !editingActivityName && (
+                <Stack
+                  direction={{ xs: "column", sm: "row" }}
+                  alignItems={{ sm: "flex-start" }}
+                  spacing={1}
+                  sx={{ mt: 2 }}
+                >
+                  <ActivityDueDateField
+                    label="Prazo da atividade"
+                    value={activityDueDate}
+                    onChange={setActivityDueDate}
+                    size="small"
+                    disabled={saving}
+                  />
+                  <Button
+                    variant="contained"
+                    onClick={() => void saveDueDate()}
+                    disabled={saving}
+                  >
+                    Salvar
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setActivityDueDate(toDateTimeLocal(activity!.dueDate));
+                      setEditingDueDate(false);
+                    }}
+                    disabled={saving}
+                  >
+                    Cancelar
                   </Button>
                 </Stack>
               )}

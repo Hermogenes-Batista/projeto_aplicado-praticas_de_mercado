@@ -9,6 +9,7 @@ class ActivityType(DjangoObjectType):
         fields = (
             "id",
             "name",
+            "due_date",
             "is_resolved",
             "created_at",
             "updated_at",

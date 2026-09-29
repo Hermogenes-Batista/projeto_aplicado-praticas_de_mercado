@@ -431,6 +431,18 @@
               "deprecationReason": null,
               "description": null,
               "isDeprecated": false,
+              "name": "dueDate",
+              "type": {
+                "kind": "SCALAR",
+                "name": "DateTime",
+                "ofType": null
+              }
+            },
+            {
+              "args": [],
+              "deprecationReason": null,
+              "description": null,
+              "isDeprecated": false,
               "name": "isResolved",
               "type": {
                 "kind": "NON_NULL",
@@ -605,6 +617,16 @@
                 {
                   "defaultValue": null,
                   "description": null,
+                  "name": "dueDate",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "DateTime",
+                    "ofType": null
+                  }
+                },
+                {
+                  "defaultValue": null,
+                  "description": null,
                   "name": "items",
                   "type": {
                     "kind": "LIST",
@@ -647,6 +669,16 @@
             },
             {
               "args": [
+                {
+                  "defaultValue": null,
+                  "description": null,
+                  "name": "dueDate",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "DateTime",
+                    "ofType": null
+                  }
+                },
                 {
                   "defaultValue": null,
                   "description": null,
