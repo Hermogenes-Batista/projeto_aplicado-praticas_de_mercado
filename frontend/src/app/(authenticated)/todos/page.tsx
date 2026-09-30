@@ -25,7 +25,6 @@ import {
   Select,
   Stack,
   TextField,
-  Toolbar,
   Typography,
   useTheme,
 } from "@mui/material";
@@ -39,8 +38,10 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import NextLink from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import ThemeSelector from "@/components/ThemeSelector";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import ActivityCountdown from "@/components/ActivityCountdown";
+import ActivityDueDateField from "@/components/ActivityDueDateField";
+import { fromDateTimeLocal, toDateTimeLocal } from "@/utils/activityDueDate";
 import {
   CreateTodoActivityDocument,
   CreateTodoActivityMutation,
@@ -54,8 +55,6 @@ import {
   DeleteTodoItemMutation,
   TodoActivitiesDocument,
   TodoActivitiesQuery,
-  TodoItemsDocument,
-  TodoItemsQuery,
   UpdateTodoActivityDocument,
   UpdateTodoActivityMutation,
   UpdateTodoItemDocument,
@@ -98,6 +97,7 @@ export default function TodosPage() {
     isResolved: false,
   });
   const [activityName, setActivityName] = useState("");
+  const [activityDueDate, setActivityDueDate] = useState("");
   const [activityId, setActivityId] = useState<string | undefined>();
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
@@ -217,6 +217,7 @@ export default function TodosPage() {
             CreateTodoActivityDocument,
             {
               name: activityName.trim(),
+              dueDate: fromDateTimeLocal(activityDueDate),
               items: newActivityItems, // Passa a lista local criada no formulário aninhado
             },
           );
@@ -226,7 +227,11 @@ export default function TodosPage() {
         const data =
           await requestAuthenticatedGraphQL<UpdateTodoActivityMutation>(
             UpdateTodoActivityDocument,
-            { id: activityId, name: activityName.trim() },
+            {
+              id: activityId,
+              name: activityName.trim(),
+              dueDate: fromDateTimeLocal(activityDueDate),
+            },
           );
         const errors = mutationErrors(data.updateActivity?.errors);
         if (errors) throw new Error(errors);
@@ -378,6 +383,7 @@ export default function TodosPage() {
   const openActivity = (Activity?: TodoActivities) => {
     setActivityId(Activity?.id);
     setActivityName(Activity?.name || "");
+    setActivityDueDate(toDateTimeLocal(Activity?.dueDate));
     setNewActivityItems([]);
     setTempItemName("");
     setActivityDialogMode(Activity ? "edit" : "create");
@@ -459,62 +465,7 @@ export default function TodosPage() {
   );
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4, px: { xs: 1, sm: 3 } }}>
-      <Toolbar
-        disableGutters
-        sx={{
-          flexDirection: { xs: "column", sm: "row" },
-          alignItems: { xs: "stretch", sm: "center" },
-          justifyContent: "space-between",
-          gap: 2,
-          mb: 3,
-        }}
-      >
-        <Box
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexDirection: "column",
-          }}
-        >
-          <Typography variant={isMobile ? "h6" : "h4"} fontWeight={700}>
-            Lista de TODOs
-          </Typography>
-          <Typography color="text.secondary">
-            Gerencie suas tarefas e atividades.
-          </Typography>
-        </Box>
-        <Stack
-          direction="row"
-          spacing={1}
-          alignItems="center"
-          justifyContent={"space-between"}
-          sx={{
-            flexWrap: "nowrap",
-            "& > .MuiButton-root": {
-              minWidth: 0,
-              px: { xs: 1, sm: 2 },
-              fontSize: { xs: "0.75rem", sm: "0.875rem" },
-              whiteSpace: "nowrap",
-            },
-          }}
-        >
-          <ThemeSelector />
-          <Button component={NextLink} href="/" variant="outlined">
-            Dashboard
-          </Button>
-          <Button
-            component={NextLink}
-            href="/todos/activities/new"
-            variant="contained"
-            startIcon={<AddIcon />}
-          >
-            {!isMobile && "Nova"} Atividade
-          </Button>
-        </Stack>
-      </Toolbar>
-
+    <Container maxWidth="lg" sx={{ pt: 1, pb: 4, px: { xs: 1, sm: 3 } }}>
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
           {error}
@@ -683,6 +634,7 @@ export default function TodosPage() {
                     <Typography variant="body2" color="text.secondary">
                       {activityItems.length} item(ns)
                     </Typography>
+                    <ActivityCountdown dueDate={activity.dueDate} />
                   </Box>
                   <Stack direction="row" spacing={1}>
                     <Button
@@ -778,6 +730,12 @@ export default function TodosPage() {
               onChange={(event) => setActivityName(event.target.value)}
               autoFocus
               fullWidth
+            />
+            <ActivityDueDateField
+              label="Prazo (opcional)"
+              value={activityDueDate}
+              onChange={setActivityDueDate}
+              helperText="A contagem regressiva mostra dias e, nas últimas 24 horas, horas."
             />
 
             {/* Apenas exibe o formulário de itens se estiver criando uma nova atividade */}
@@ -878,39 +836,6 @@ export default function TodosPage() {
           }
         }}
       />
-
-      <Dialog
-        open={activityDialogOpen}
-        onClose={() => setActivityDialogOpen(false)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>
-          {activityDialogMode === "create"
-            ? "Nova atividade"
-            : "Editar atividade"}
-        </DialogTitle>
-        <DialogContent>
-          <TextField
-            label="Nome"
-            value={activityName}
-            onChange={(event) => setActivityName(event.target.value)}
-            autoFocus
-            fullWidth
-            sx={{ mt: 1 }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setActivityDialogOpen(false)}>Cancelar</Button>
-          <Button
-            onClick={() => void saveActivity()}
-            variant="contained"
-            disabled={saving}
-          >
-            Salvar
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Container>
   );
 }
