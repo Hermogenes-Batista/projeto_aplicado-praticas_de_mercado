@@ -218,6 +218,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(userData);
     setError(null);
     localStorage.setItem("drf_user", JSON.stringify(userData));
+    localStorage.setItem(LAST_ACTIVITY_STORAGE_KEY, String(Date.now()));
   };
 
   const loginWithCredentials = async (
@@ -433,7 +434,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let logoutTimer: ReturnType<typeof setTimeout>;
     let countdownTimer: ReturnType<typeof setInterval>;
 
-    const resetInactivityTimer = (fromOtherTab = false) => {
+    const resetInactivityTimer = (
+      fromOtherTab = false,
+      lastActivityAt = Date.now(),
+    ) => {
       if (inactivityWarningRef.current && !fromOtherTab) {
         return;
       }
@@ -445,25 +449,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setShowInactivityWarning(false);
       setInactivityRemainingSeconds(null);
 
+      const elapsed = Math.max(0, Date.now() - lastActivityAt);
+      const timeUntilWarning = Math.max(INACTIVITY_WARNING_MS - elapsed, 0);
+      const timeUntilLogout = Math.max(INACTIVITY_LOGOUT_MS - elapsed, 0);
+
+      if (timeUntilLogout === 0) {
+        void logout();
+        return;
+      }
+
       warningTimer = setTimeout(() => {
+        const currentIdleTime = Date.now() - lastActivityAt;
+        if (currentIdleTime >= INACTIVITY_LOGOUT_MS) {
+          void logout();
+          return;
+        }
         inactivityWarningRef.current = true;
         setShowInactivityWarning(true);
         setInactivityRemainingSeconds(
-          Math.ceil((INACTIVITY_LOGOUT_MS - INACTIVITY_WARNING_MS) / 1000),
+          Math.ceil(Math.max(INACTIVITY_LOGOUT_MS - currentIdleTime, 0) / 1000),
         );
         countdownTimer = setInterval(() => {
           setInactivityRemainingSeconds((seconds) =>
             seconds === null ? null : Math.max(seconds - 1, 0),
           );
         }, 1000);
-      }, INACTIVITY_WARNING_MS);
+      }, timeUntilWarning);
       logoutTimer = setTimeout(() => {
-        void logout();
-      }, INACTIVITY_LOGOUT_MS);
+        const latestActivityAt = Number(
+          localStorage.getItem(LAST_ACTIVITY_STORAGE_KEY),
+        );
+        const remaining =
+          INACTIVITY_LOGOUT_MS - (Date.now() - latestActivityAt);
+        if (remaining <= 0) {
+          void logout();
+        } else {
+          resetInactivityTimer(true, latestActivityAt);
+        }
+      }, timeUntilLogout);
     };
 
     const handleLocalActivity = () => {
       const now = Date.now();
+      const lastActivityAt = Number(
+        localStorage.getItem(LAST_ACTIVITY_STORAGE_KEY),
+      );
+      if (lastActivityAt > 0 && now - lastActivityAt >= INACTIVITY_LOGOUT_MS) {
+        void logout();
+        return;
+      }
+      if (inactivityWarningRef.current) return;
+
       if (now - lastActivityBroadcastRef.current >= 1000) {
         localStorage.setItem(LAST_ACTIVITY_STORAGE_KEY, String(now));
         lastActivityBroadcastRef.current = now;
@@ -471,9 +507,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       resetInactivityTimer();
     };
 
+    const handleResume = () => {
+      if (document.visibilityState === "hidden") return;
+
+      const lastActivityAt = Number(
+        localStorage.getItem(LAST_ACTIVITY_STORAGE_KEY),
+      );
+      if (!lastActivityAt) return;
+
+      const elapsed = Date.now() - lastActivityAt;
+      if (elapsed >= INACTIVITY_LOGOUT_MS) {
+        void logout();
+        return;
+      }
+
+      resetInactivityTimer(true, lastActivityAt);
+    };
+
     const handleStorageEvent = (event: StorageEvent) => {
       if (event.key === LAST_ACTIVITY_STORAGE_KEY && event.newValue) {
-        resetInactivityTimer(true);
+        resetInactivityTimer(true, Number(event.newValue));
       }
       if (event.key === LOGOUT_STORAGE_KEY && event.newValue) {
         void requestGraphQL(EndSessionDocument).catch(() => undefined);
@@ -498,8 +551,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.addEventListener(eventName, handleLocalActivity);
     });
     window.addEventListener("storage", handleStorageEvent);
-    localStorage.setItem(LAST_ACTIVITY_STORAGE_KEY, String(Date.now()));
-    resetInactivityTimer();
+    window.addEventListener("focus", handleResume);
+    window.addEventListener("pageshow", handleResume);
+    document.addEventListener("visibilitychange", handleResume);
+
+    const storedActivityAt = Number(
+      localStorage.getItem(LAST_ACTIVITY_STORAGE_KEY),
+    );
+    const initialActivityAt = storedActivityAt || Date.now();
+    if (!storedActivityAt) {
+      localStorage.setItem(
+        LAST_ACTIVITY_STORAGE_KEY,
+        String(initialActivityAt),
+      );
+    }
+    resetInactivityTimer(true, initialActivityAt);
 
     return () => {
       clearTimeout(warningTimer);
@@ -509,6 +575,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         window.removeEventListener(eventName, handleLocalActivity);
       });
       window.removeEventListener("storage", handleStorageEvent);
+      window.removeEventListener("focus", handleResume);
+      window.removeEventListener("pageshow", handleResume);
+      document.removeEventListener("visibilitychange", handleResume);
     };
   }, [inactivityResetKey, logout, requestGraphQL, router, token, user]);
 
@@ -584,6 +653,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             onClick={() => {
               inactivityWarningRef.current = false;
               setShowInactivityWarning(false);
+              const now = Date.now();
+              localStorage.setItem(LAST_ACTIVITY_STORAGE_KEY, String(now));
+              lastActivityBroadcastRef.current = now;
               setInactivityResetKey((key) => key + 1);
             }}
             autoFocus

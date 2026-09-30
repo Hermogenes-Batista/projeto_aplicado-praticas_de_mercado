@@ -6,6 +6,7 @@ from todo_app.models.base import BaseModel
 
 class Activity(BaseModel):
     name = models.CharField(max_length=100)
+    due_date = models.DateTimeField(null=True, blank=True)
     is_resolved = models.BooleanField(default=False)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
