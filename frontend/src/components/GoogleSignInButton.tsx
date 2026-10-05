@@ -27,11 +27,13 @@ declare global {
 interface GoogleSignInButtonProps {
   redirectAfterLogin?: string;
   showDemoButton?: boolean;
+  showAuthError?: boolean;
 }
 
 export default function GoogleSignInButton({
   redirectAfterLogin = "/",
   showDemoButton = true,
+  showAuthError = true,
 }: GoogleSignInButtonProps) {
   const { clientId, loginWithGoogleCredential, loginDemoUser, loading, error } =
     useAuth();
@@ -118,7 +120,7 @@ export default function GoogleSignInButton({
 
   return (
     <Stack spacing={2} sx={{ width: "100%" }}>
-      {error && (
+      {showAuthError && error && (
         <Alert severity="error" sx={{ fontSize: "0.85rem" }}>
           {error}
         </Alert>

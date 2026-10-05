@@ -4,6 +4,7 @@ from .login import LoginMutation
 from .logout import LogoutMutation
 from .refresh import RefreshTokenMutation
 from .google import GoogleLoginMutation
+from .register import RegisterUserMutation
 
 
 class AuthMutation(graphene.ObjectType):
@@ -11,6 +12,7 @@ class AuthMutation(graphene.ObjectType):
     logout = LogoutMutation.Field()
     refresh_token = RefreshTokenMutation.Field()
     login_with_google = GoogleLoginMutation.Field()
+    register_user = RegisterUserMutation.Field()
 
 
 __all__ = ["AuthMutation"]

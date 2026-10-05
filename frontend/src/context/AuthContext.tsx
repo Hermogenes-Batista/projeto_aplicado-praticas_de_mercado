@@ -21,6 +21,7 @@ import {
 import {
   CurrentUserDocument,
   AuthenticateUserDocument,
+  CreateAccountDocument,
   AuthenticateGoogleDocument,
   EndSessionDocument,
   GoogleConfigDocument,
@@ -28,6 +29,8 @@ import {
   type CurrentUserQuery,
   type AuthenticateUserMutation,
   type AuthenticateUserMutationVariables,
+  type CreateAccountMutation,
+  type CreateAccountMutationVariables,
   type AuthenticateGoogleMutation,
   type GoogleConfigQuery,
   type RefreshSessionMutation,
@@ -49,10 +52,8 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   clientId: string;
-  loginWithCredentials: (
-    username: string,
-    password: string,
-  ) => Promise<boolean>;
+  loginWithCredentials: (email: string, password: string) => Promise<boolean>;
+  registerWithEmail: (email: string, password: string) => Promise<boolean>;
   loginWithGoogleCredential: (credential: string) => Promise<boolean>;
   loginWithGoogleCode: (code: string, redirectUri?: string) => Promise<boolean>;
   loginDemoUser: (email?: string, name?: string) => Promise<boolean>;
@@ -222,14 +223,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const loginWithCredentials = async (
-    username: string,
+    email: string,
     password: string,
   ): Promise<boolean> => {
     setLoading(true);
     setError(null);
     try {
       const variables: AuthenticateUserMutationVariables = {
-        username,
+        email,
         password,
       };
       const data = await requestGraphQL<AuthenticateUserMutation>(
@@ -256,6 +257,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return true;
     } catch (err: any) {
       setError(err.message || "Erro de autenticação.");
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const registerWithEmail = async (
+    email: string,
+    password: string,
+  ): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const variables: CreateAccountMutationVariables = { email, password };
+      const data = await requestGraphQL<CreateAccountMutation>(
+        CreateAccountDocument,
+        variables,
+      );
+      const registration = data.registerUser;
+      if (
+        !registration?.success ||
+        !registration.access ||
+        !registration.refresh ||
+        !registration.user
+      ) {
+        throw new Error(
+          registration?.errors.join(", ") || "Falha ao criar a conta.",
+        );
+      }
+
+      handleAuthSuccess(
+        registration.access,
+        registration.refresh,
+        normalizeUser(registration.user as Record<string, unknown>),
+      );
+      return true;
+    } catch (err: any) {
+      setError(err.message || "Falha ao criar a conta.");
       return false;
     } finally {
       setLoading(false);
@@ -614,6 +653,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         error,
         clientId,
         loginWithCredentials,
+        registerWithEmail,
         loginWithGoogleCredential,
         loginWithGoogleCode,
         loginDemoUser,

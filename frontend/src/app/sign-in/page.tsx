@@ -1,9 +1,18 @@
 "use client";
 
+import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import Avatar from "@mui/material/Avatar";
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
+import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
+import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import ChecklistRoundedIcon from "@mui/icons-material/ChecklistRounded";
@@ -12,6 +21,7 @@ import Image from "next/image";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
 import ThemeSelector from "@/components/ThemeSelector";
 import demo from "@/static/images/demo.gif";
+import { useAuth } from "@/context/AuthContext";
 
 const benefits = [
   "Crie listas para cada projeto ou parte da sua rotina.",
@@ -20,6 +30,24 @@ const benefits = [
 ];
 
 export default function SignIn() {
+  const router = useRouter();
+  const { loginWithCredentials, registerWithEmail, loading, error } = useAuth();
+  const [mode, setMode] = useState<"login" | "register">("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (mode === "register" && password !== confirmPassword) return;
+
+    const succeeded =
+      mode === "login"
+        ? await loginWithCredentials(email, password)
+        : await registerWithEmail(email, password);
+    if (succeeded) router.push("/");
+  };
+
   return (
     <Box
       component="main"
@@ -221,11 +249,82 @@ export default function SignIn() {
           >
             Seu dia começa aqui.
           </Typography>
-          <Typography color="text.secondary" sx={{ mb: 4, lineHeight: 1.7 }}>
-            Entre com sua conta Google para acessar suas listas e dar o próximo
-            passo nas suas atividades.
+          <Typography color="text.secondary" sx={{ mb: 3, lineHeight: 1.7 }}>
+            Entre com seu e-mail e senha ou use sua conta Google para acessar
+            suas listas e acompanhar suas atividades.
           </Typography>
-          <GoogleSignInButton redirectAfterLogin="/" />
+          <Tabs
+            value={mode}
+            onChange={(_, nextMode: "login" | "register") => setMode(nextMode)}
+            variant="fullWidth"
+            sx={{ mb: 2 }}
+          >
+            <Tab value="login" label="Entrar" />
+            <Tab value="register" label="Criar conta" />
+          </Tabs>
+          <Stack component="form" spacing={2} onSubmit={handleSubmit}>
+            {error && <Alert severity="error">{error}</Alert>}
+            <TextField
+              label="E-mail"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              autoComplete="email"
+              required
+              fullWidth
+            />
+            <TextField
+              label="Senha"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete={
+                mode === "login" ? "current-password" : "new-password"
+              }
+              required
+              fullWidth
+              helperText={
+                mode === "register"
+                  ? "Use uma senha forte com pelo menos 8 caracteres."
+                  : undefined
+              }
+            />
+            {mode === "register" && (
+              <TextField
+                label="Confirmar senha"
+                type="password"
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                autoComplete="new-password"
+                required
+                fullWidth
+                error={Boolean(confirmPassword && password !== confirmPassword)}
+                helperText={
+                  confirmPassword && password !== confirmPassword
+                    ? "As senhas não coincidem."
+                    : undefined
+                }
+              />
+            )}
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              disabled={
+                loading || (mode === "register" && password !== confirmPassword)
+              }
+              startIcon={
+                loading ? (
+                  <CircularProgress size={18} color="inherit" />
+                ) : undefined
+              }
+              sx={{ py: 1.2 }}
+            >
+              {mode === "login" ? "Entrar com e-mail" : "Criar conta"}
+            </Button>
+          </Stack>
+          <Divider sx={{ my: 2 }}>ou</Divider>
+          <GoogleSignInButton redirectAfterLogin="/" showAuthError={false} />
           <Typography
             variant="body2"
             color="text.secondary"

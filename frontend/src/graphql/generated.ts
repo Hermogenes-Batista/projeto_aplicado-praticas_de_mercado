@@ -7,214 +7,9 @@ export type Incremental<T> =
       [P in keyof T]?: P extends " $fragmentName" | "__typename" ? T[P] : never;
     };
 import { TypedDocumentNode as DocumentNode } from "@graphql-typed-document-node/core";
-export type Maybe<T> = T | null;
-export type InputMaybe<T> = Maybe<T>;
-/** All built-in and custom scalars, mapped to their actual values */
-export type Scalars = {
-  ID: { input: string; output: string };
-  String: { input: string; output: string };
-  Boolean: { input: boolean; output: boolean };
-  Int: { input: number; output: number };
-  Float: { input: number; output: number };
-  DateTime: { input: string; output: string };
-  UUID: { input: string; output: string };
-};
-
-export type ActivityType = {
-  __typename?: "ActivityType";
-  createdAt: Scalars["DateTime"]["output"];
-  createdBy: UserType;
-  dueDate?: Maybe<Scalars["DateTime"]["output"]>;
-  id: Scalars["UUID"]["output"];
-  isResolved: Scalars["Boolean"]["output"];
-  items: Array<ItemType>;
-  name: Scalars["String"]["output"];
-  updatedAt: Scalars["DateTime"]["output"];
-};
-
-export type CompleteActivity = {
-  __typename?: "CompleteActivity";
-  activity?: Maybe<ActivityType>;
-  errors: Array<Maybe<Scalars["String"]["output"]>>;
-};
-
-export type CreateActivity = {
-  __typename?: "CreateActivity";
-  activity?: Maybe<ActivityType>;
-  errors: Array<Maybe<Scalars["String"]["output"]>>;
-};
-
-export type CreateItem = {
-  __typename?: "CreateItem";
-  errors: Array<Maybe<Scalars["String"]["output"]>>;
-  item?: Maybe<ItemType>;
-};
-
-export type DeleteActivity = {
-  __typename?: "DeleteActivity";
-  errors: Array<Maybe<Scalars["String"]["output"]>>;
-  success: Scalars["Boolean"]["output"];
-};
-
-export type DeleteItem = {
-  __typename?: "DeleteItem";
-  errors: Array<Maybe<Scalars["String"]["output"]>>;
-  success: Scalars["Boolean"]["output"];
-};
-
-export type GoogleLoginMutation = {
-  __typename?: "GoogleLoginMutation";
-  access?: Maybe<Scalars["String"]["output"]>;
-  errors: Array<Maybe<Scalars["String"]["output"]>>;
-  refresh?: Maybe<Scalars["String"]["output"]>;
-  success: Scalars["Boolean"]["output"];
-  user?: Maybe<UserType>;
-};
-
 export type ItemInput = {
-  isResolved?: InputMaybe<Scalars["Boolean"]["input"]>;
-  name: Scalars["String"]["input"];
-};
-
-export type ItemType = {
-  __typename?: "ItemType";
-  activity: ActivityType;
-  createdAt: Scalars["DateTime"]["output"];
-  createdBy: UserType;
-  id: Scalars["UUID"]["output"];
-  isResolved: Scalars["Boolean"]["output"];
-  name: Scalars["String"]["output"];
-  updatedAt: Scalars["DateTime"]["output"];
-};
-
-export type LoginMutation = {
-  __typename?: "LoginMutation";
-  access?: Maybe<Scalars["String"]["output"]>;
-  errors: Array<Maybe<Scalars["String"]["output"]>>;
-  refresh?: Maybe<Scalars["String"]["output"]>;
-  success: Scalars["Boolean"]["output"];
-  user?: Maybe<UserType>;
-};
-
-export type LogoutMutation = {
-  __typename?: "LogoutMutation";
-  errors: Array<Maybe<Scalars["String"]["output"]>>;
-  success: Scalars["Boolean"]["output"];
-};
-
-export type MutationRoot = {
-  __typename?: "MutationRoot";
-  completeActivity?: Maybe<CompleteActivity>;
-  createActivity?: Maybe<CreateActivity>;
-  createItem?: Maybe<CreateItem>;
-  deleteActivity?: Maybe<DeleteActivity>;
-  deleteItem?: Maybe<DeleteItem>;
-  login?: Maybe<LoginMutation>;
-  loginWithGoogle?: Maybe<GoogleLoginMutation>;
-  logout?: Maybe<LogoutMutation>;
-  refreshToken?: Maybe<RefreshToken>;
-  updateActivity?: Maybe<UpdateActivity>;
-  updateItem?: Maybe<UpdateItem>;
-};
-
-export type MutationRootCompleteActivityArgs = {
-  id: Scalars["UUID"]["input"];
-  isResolved: Scalars["Boolean"]["input"];
-};
-
-export type MutationRootCreateActivityArgs = {
-  dueDate?: InputMaybe<Scalars["DateTime"]["input"]>;
-  items?: InputMaybe<Array<ItemInput>>;
-  name: Scalars["String"]["input"];
-};
-
-export type MutationRootCreateItemArgs = {
-  activityId: Scalars["UUID"]["input"];
-  isResolved?: InputMaybe<Scalars["Boolean"]["input"]>;
-  name: Scalars["String"]["input"];
-};
-
-export type MutationRootDeleteActivityArgs = {
-  id: Scalars["UUID"]["input"];
-};
-
-export type MutationRootDeleteItemArgs = {
-  id: Scalars["UUID"]["input"];
-};
-
-export type MutationRootLoginArgs = {
-  password: Scalars["String"]["input"];
-  username: Scalars["String"]["input"];
-};
-
-export type MutationRootLoginWithGoogleArgs = {
-  code?: InputMaybe<Scalars["String"]["input"]>;
-  credential?: InputMaybe<Scalars["String"]["input"]>;
-  demo?: InputMaybe<Scalars["Boolean"]["input"]>;
-  email?: InputMaybe<Scalars["String"]["input"]>;
-  name?: InputMaybe<Scalars["String"]["input"]>;
-  redirectUri?: InputMaybe<Scalars["String"]["input"]>;
-};
-
-export type MutationRootLogoutArgs = {
-  refresh?: InputMaybe<Scalars["String"]["input"]>;
-};
-
-export type MutationRootUpdateActivityArgs = {
-  dueDate?: InputMaybe<Scalars["DateTime"]["input"]>;
-  id: Scalars["UUID"]["input"];
-  name: Scalars["String"]["input"];
-};
-
-export type MutationRootUpdateItemArgs = {
-  activityId: Scalars["UUID"]["input"];
-  id: Scalars["UUID"]["input"];
-  isResolved: Scalars["Boolean"]["input"];
-  name: Scalars["String"]["input"];
-};
-
-export type QueryRoot = {
-  __typename?: "QueryRoot";
-  activities: Array<Maybe<ActivityType>>;
-  googleClientId: Scalars["String"]["output"];
-  items: Array<Maybe<ItemType>>;
-  me?: Maybe<UserType>;
-};
-
-export type QueryRootItemsArgs = {
-  isResolved?: InputMaybe<Scalars["Boolean"]["input"]>;
-};
-
-export type RefreshToken = {
-  __typename?: "RefreshToken";
-  access?: Maybe<Scalars["String"]["output"]>;
-  errors: Array<Maybe<Scalars["String"]["output"]>>;
-  refresh?: Maybe<Scalars["String"]["output"]>;
-  success: Scalars["Boolean"]["output"];
-};
-
-export type UpdateActivity = {
-  __typename?: "UpdateActivity";
-  activity?: Maybe<ActivityType>;
-  errors: Array<Maybe<Scalars["String"]["output"]>>;
-};
-
-export type UpdateItem = {
-  __typename?: "UpdateItem";
-  errors: Array<Maybe<Scalars["String"]["output"]>>;
-  item?: Maybe<ItemType>;
-};
-
-export type UserType = {
-  __typename?: "UserType";
-  email: Scalars["String"]["output"];
-  firstName: Scalars["String"]["output"];
-  id: Scalars["UUID"]["output"];
-  /** Designates whether the user can log into this admin site. */
-  isStaff: Scalars["Boolean"]["output"];
-  lastName: Scalars["String"]["output"];
-  /** Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only. */
-  username: Scalars["String"]["output"];
+  isResolved?: boolean | null | undefined;
+  name: string;
 };
 
 export type CurrentUserQueryVariables = Exact<{ [key: string]: never }>;
@@ -231,12 +26,34 @@ export type CurrentUserQuery = {
 };
 
 export type AuthenticateUserMutationVariables = Exact<{
-  username: string;
+  email: string;
   password: string;
 }>;
 
 export type AuthenticateUserMutation = {
   login: {
+    success: boolean;
+    errors: Array<string | null>;
+    access: string | null;
+    refresh: string | null;
+    user: {
+      id: string;
+      username: string;
+      email: string;
+      firstName: string;
+      lastName: string;
+      isStaff: boolean;
+    } | null;
+  } | null;
+};
+
+export type CreateAccountMutationVariables = Exact<{
+  email: string;
+  password: string;
+}>;
+
+export type CreateAccountMutation = {
+  registerUser: {
     success: boolean;
     errors: Array<string | null>;
     access: string | null;
@@ -861,7 +678,7 @@ export const AuthenticateUserDocument = {
           kind: "VariableDefinition",
           variable: {
             kind: "Variable",
-            name: { kind: "Name", value: "username" },
+            name: { kind: "Name", value: "email" },
           },
           type: {
             kind: "NonNullType",
@@ -898,7 +715,7 @@ export const AuthenticateUserDocument = {
                 name: { kind: "Name", value: "username" },
                 value: {
                   kind: "Variable",
-                  name: { kind: "Name", value: "username" },
+                  name: { kind: "Name", value: "email" },
                 },
               },
               {
@@ -959,6 +776,117 @@ export const AuthenticateUserDocument = {
 } as unknown as DocumentNode<
   AuthenticateUserMutation,
   AuthenticateUserMutationVariables
+>;
+export const CreateAccountDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "CreateAccount" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "email" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "String" },
+            },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "password" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "String" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "registerUser" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "email" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "email" },
+                },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "password" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "password" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "errors" } },
+                { kind: "Field", name: { kind: "Name", value: "access" } },
+                { kind: "Field", name: { kind: "Name", value: "refresh" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "user" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      {
+                        kind: "FragmentSpread",
+                        name: { kind: "Name", value: "UserFields" },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: "FragmentDefinition",
+      name: { kind: "Name", value: "UserFields" },
+      typeCondition: {
+        kind: "NamedType",
+        name: { kind: "Name", value: "UserType" },
+      },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "id" } },
+          { kind: "Field", name: { kind: "Name", value: "username" } },
+          { kind: "Field", name: { kind: "Name", value: "email" } },
+          { kind: "Field", name: { kind: "Name", value: "firstName" } },
+          { kind: "Field", name: { kind: "Name", value: "lastName" } },
+          { kind: "Field", name: { kind: "Name", value: "isStaff" } },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  CreateAccountMutation,
+  CreateAccountMutationVariables
 >;
 export const EndSessionDocument = {
   kind: "Document",
