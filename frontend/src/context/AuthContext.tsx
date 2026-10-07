@@ -21,6 +21,8 @@ import {
 import {
   CurrentUserDocument,
   AuthenticateUserDocument,
+  CreateAccountDocument,
+  UpdateProfileDocument,
   AuthenticateGoogleDocument,
   EndSessionDocument,
   GoogleConfigDocument,
@@ -28,6 +30,10 @@ import {
   type CurrentUserQuery,
   type AuthenticateUserMutation,
   type AuthenticateUserMutationVariables,
+  type CreateAccountMutation,
+  type CreateAccountMutationVariables,
+  type UpdateProfileMutation,
+  type UpdateProfileMutationVariables,
   type AuthenticateGoogleMutation,
   type GoogleConfigQuery,
   type RefreshSessionMutation,
@@ -49,10 +55,14 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   clientId: string;
-  loginWithCredentials: (
-    username: string,
-    password: string,
-  ) => Promise<boolean>;
+  loginWithCredentials: (email: string, password: string) => Promise<boolean>;
+  registerWithEmail: (email: string, password: string) => Promise<boolean>;
+  updateProfile: (profile: {
+    username: string;
+    firstName: string;
+    lastName: string;
+    password?: string;
+  }) => Promise<string | null>;
   loginWithGoogleCredential: (credential: string) => Promise<boolean>;
   loginWithGoogleCode: (code: string, redirectUri?: string) => Promise<boolean>;
   loginDemoUser: (email?: string, name?: string) => Promise<boolean>;
@@ -222,14 +232,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const loginWithCredentials = async (
-    username: string,
+    email: string,
     password: string,
   ): Promise<boolean> => {
     setLoading(true);
     setError(null);
     try {
       const variables: AuthenticateUserMutationVariables = {
-        username,
+        email,
         password,
       };
       const data = await requestGraphQL<AuthenticateUserMutation>(
@@ -259,6 +269,81 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return false;
     } finally {
       setLoading(false);
+    }
+  };
+
+  const registerWithEmail = async (
+    email: string,
+    password: string,
+  ): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const variables: CreateAccountMutationVariables = { email, password };
+      const data = await requestGraphQL<CreateAccountMutation>(
+        CreateAccountDocument,
+        variables,
+      );
+      const registration = data.registerUser;
+      if (
+        !registration?.success ||
+        !registration.access ||
+        !registration.refresh ||
+        !registration.user
+      ) {
+        throw new Error(
+          registration?.errors.join(", ") || "Falha ao criar a conta.",
+        );
+      }
+
+      handleAuthSuccess(
+        registration.access,
+        registration.refresh,
+        normalizeUser(registration.user as Record<string, unknown>),
+      );
+      return true;
+    } catch (err: any) {
+      setError(err.message || "Falha ao criar a conta.");
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateProfile = async (profile: {
+    username: string;
+    firstName: string;
+    lastName: string;
+    password?: string;
+  }): Promise<string | null> => {
+    setError(null);
+    try {
+      const variables: UpdateProfileMutationVariables = {
+        username: profile.username,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        ...(profile.password ? { password: profile.password } : {}),
+      };
+      const data = await requestAuthenticatedGraphQL<UpdateProfileMutation>(
+        UpdateProfileDocument,
+        variables,
+      );
+      if (!data.updateProfile?.success || !data.updateProfile.user) {
+        throw new Error(
+          data.updateProfile?.errors.join(", ") ||
+            "Falha ao atualizar o perfil.",
+        );
+      }
+      const updatedUser = normalizeUser(
+        data.updateProfile.user as unknown as Record<string, unknown>,
+      );
+      setUser(updatedUser);
+      localStorage.setItem("drf_user", JSON.stringify(updatedUser));
+      return null;
+    } catch (err: any) {
+      const message = err.message || "Falha ao atualizar o perfil.";
+      setError(message);
+      return message;
     }
   };
 
@@ -614,6 +699,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         error,
         clientId,
         loginWithCredentials,
+        registerWithEmail,
+        updateProfile,
         loginWithGoogleCredential,
         loginWithGoogleCode,
         loginDemoUser,

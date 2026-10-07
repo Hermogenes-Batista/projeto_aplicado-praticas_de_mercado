@@ -5,11 +5,16 @@ import { usePathname, useRouter } from "next/navigation";
 import NextLink from "next/link";
 import {
   AppBar,
+  Alert,
   Avatar,
   Box,
   Button,
   CircularProgress,
   Divider,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Drawer,
   IconButton,
   List,
@@ -18,6 +23,7 @@ import {
   ListItemIcon,
   ListItemText,
   Stack,
+  TextField,
   Toolbar,
   Typography,
   useTheme,
@@ -37,11 +43,21 @@ export default function AuthenticatedLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { user, loading, logout } = useAuth();
+  const { user, loading, logout, updateProfile } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [profileForm, setProfileForm] = useState({
+    username: "",
+    firstName: "",
+    lastName: "",
+    password: "",
+    confirmPassword: "",
+  });
 
   useEffect(() => {
     if (!loading && !user) router.replace("/sign-in");
@@ -110,6 +126,37 @@ export default function AuthenticatedLayout({
         ? "Lista de TODOs"
         : "Painel de Controle";
 
+  const openProfile = () => {
+    setProfileForm({
+      username: user.username,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      password: "",
+      confirmPassword: "",
+    });
+    setProfileError(null);
+    setProfileOpen(true);
+  };
+
+  const saveProfile = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setProfileError(null);
+    if (profileForm.password !== profileForm.confirmPassword) {
+      setProfileError("As senhas não coincidem.");
+      return;
+    }
+    setProfileSaving(true);
+    const error = await updateProfile({
+      username: profileForm.username.trim(),
+      firstName: profileForm.firstName.trim(),
+      lastName: profileForm.lastName.trim(),
+      ...(profileForm.password ? { password: profileForm.password } : {}),
+    });
+    setProfileSaving(false);
+    if (!error) setProfileOpen(false);
+    else setProfileError(error);
+  };
+
   return (
     <Box
       sx={{
@@ -162,13 +209,20 @@ export default function AuthenticatedLayout({
               {!isMobile && "Nova "}Atividade
             </Button>
             <ThemeSelector />
-            <Avatar
-              src={user.picture}
-              alt={user.first_name || user.username}
-              sx={{ width: 32, height: 32, bgcolor: "primary.main" }}
+            <IconButton
+              onClick={openProfile}
+              aria-label="Editar perfil"
+              title="Editar perfil"
+              sx={{ p: 0 }}
             >
-              {(user.first_name || user.username).charAt(0).toUpperCase()}
-            </Avatar>
+              <Avatar
+                src={user.picture}
+                alt={user.first_name || user.username}
+                sx={{ width: 32, height: 32, bgcolor: "primary.main" }}
+              >
+                {(user.first_name || user.username).charAt(0).toUpperCase()}
+              </Avatar>
+            </IconButton>
             <Typography
               variant="body2"
               fontWeight={600}
@@ -244,6 +298,105 @@ export default function AuthenticatedLayout({
       >
         {children}
       </Box>
+
+      <Dialog
+        open={profileOpen}
+        onClose={() => !profileSaving && setProfileOpen(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <Box component="form" onSubmit={saveProfile}>
+          <DialogTitle>Editar perfil</DialogTitle>
+          <DialogContent>
+            <Stack spacing={2} sx={{ pt: 1 }}>
+              {profileError && <Alert severity="error">{profileError}</Alert>}
+              <TextField
+                label="Usuário"
+                value={profileForm.username}
+                onChange={(event) =>
+                  setProfileForm((form) => ({
+                    ...form,
+                    username: event.target.value,
+                  }))
+                }
+                required
+                autoComplete="username"
+                fullWidth
+              />
+              <TextField
+                label="Nome"
+                value={profileForm.firstName}
+                onChange={(event) =>
+                  setProfileForm((form) => ({
+                    ...form,
+                    firstName: event.target.value,
+                  }))
+                }
+                fullWidth
+              />
+              <TextField
+                label="Sobrenome"
+                value={profileForm.lastName}
+                onChange={(event) =>
+                  setProfileForm((form) => ({
+                    ...form,
+                    lastName: event.target.value,
+                  }))
+                }
+                fullWidth
+              />
+              <Divider />
+              <Typography variant="subtitle2" fontWeight={700}>
+                Alterar senha{" "}
+                <Typography
+                  component="span"
+                  variant="body2"
+                  color="text.secondary"
+                >
+                  (opcional)
+                </Typography>
+              </Typography>
+              <TextField
+                label="Nova senha"
+                type="password"
+                value={profileForm.password}
+                onChange={(event) =>
+                  setProfileForm((form) => ({
+                    ...form,
+                    password: event.target.value,
+                  }))
+                }
+                autoComplete="new-password"
+                fullWidth
+              />
+              <TextField
+                label="Confirmar nova senha"
+                type="password"
+                value={profileForm.confirmPassword}
+                onChange={(event) =>
+                  setProfileForm((form) => ({
+                    ...form,
+                    confirmPassword: event.target.value,
+                  }))
+                }
+                autoComplete="new-password"
+                fullWidth
+              />
+            </Stack>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button
+              onClick={() => setProfileOpen(false)}
+              disabled={profileSaving}
+            >
+              Cancelar
+            </Button>
+            <Button type="submit" variant="contained" disabled={profileSaving}>
+              {profileSaving ? "Salvando…" : "Salvar alterações"}
+            </Button>
+          </DialogActions>
+        </Box>
+      </Dialog>
     </Box>
   );
 }

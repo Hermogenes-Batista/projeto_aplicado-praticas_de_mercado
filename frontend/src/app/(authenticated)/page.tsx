@@ -187,20 +187,31 @@ export default function Dashboard() {
                   <Grid item xs={12} md={6} key={activity.name}>
                     <Card variant="outlined" sx={{ height: "100%" }}>
                       <CardContent>
-                        <Typography
-                          component={NextLink}
-                          href={`/todos/activities/${activity.id}`}
-                          variant="subtitle1"
-                          fontWeight={700}
-                          sx={{
-                            color: "primary.main",
-                            textDecoration: "none",
-                            "&:hover": { textDecoration: "underline" },
-                          }}
+                        <Stack
+                          direction="row"
+                          alignItems="center"
+                          flexWrap="wrap"
+                          rowGap={0.5}
                         >
-                          {activity.name}
-                        </Typography>
-                        <ActivityCountdown dueDate={activity.dueDate} />
+                          <Typography
+                            component={NextLink}
+                            href={`/todos/activities/${activity.id}`}
+                            variant="subtitle1"
+                            fontWeight={700}
+                            sx={{
+                              color: "primary.main",
+                              textDecoration: "none",
+                              "&:hover": { textDecoration: "underline" },
+                            }}
+                          >
+                            {activity.name.length > 25
+                              ? `${activity.name.slice(0, 25)}…`
+                              : activity.name}
+                          </Typography>
+                          <Box sx={{ ml: 1 }}>
+                            <ActivityCountdown dueDate={activity.dueDate} />
+                          </Box>
+                        </Stack>
                         <Stack spacing={1.5} sx={{ mt: 2 }}>
                           <Stack direction="row" justifyContent="space-between">
                             <Typography variant="body2">
