@@ -4,6 +4,26 @@ query CurrentUser {
   }
 }
 
+mutation UpdateProfile(
+  $username: String!
+  $firstName: String!
+  $lastName: String!
+  $password: String
+) {
+  updateProfile(
+    username: $username
+    firstName: $firstName
+    lastName: $lastName
+    password: $password
+  ) {
+    success
+    errors
+    user {
+      ...UserFields
+    }
+  }
+}
+
 mutation AuthenticateUser($email: String!, $password: String!) {
   login(username: $email, password: $password) {
     success

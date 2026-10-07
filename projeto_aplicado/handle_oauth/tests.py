@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from .serializers import RegisterSerializer
+from .serializers import ProfileSerializer, RegisterSerializer
 
 
 class RegisterSerializerTests(TestCase):
@@ -44,3 +44,38 @@ class RegisterSerializerTests(TestCase):
 
         self.assertFalse(serializer.is_valid())
         self.assertIn("password", serializer.errors)
+
+
+class ProfileSerializerTests(TestCase):
+    def test_updates_profile_and_hashes_optional_password(self):
+        user = get_user_model().objects.create_user(
+            username="before", password="Existing-password-491!"
+        )
+        serializer = ProfileSerializer(
+            user,
+            data={
+                "username": "after",
+                "first_name": "First",
+                "last_name": "Last",
+                "password": "Another-long-password-492!",
+            },
+        )
+
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        updated_user = serializer.save()
+
+        self.assertEqual(updated_user.username, "after")
+        self.assertEqual(updated_user.first_name, "First")
+        self.assertEqual(updated_user.last_name, "Last")
+        self.assertTrue(updated_user.check_password("Another-long-password-492!"))
+
+    def test_profile_update_without_password_keeps_current_password(self):
+        user = get_user_model().objects.create_user(
+            username="before", password="Existing-password-491!"
+        )
+        serializer = ProfileSerializer(user, data={"username": "after"}, partial=True)
+
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        updated_user = serializer.save()
+
+        self.assertTrue(updated_user.check_password("Existing-password-491!"))
