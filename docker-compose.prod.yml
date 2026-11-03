@@ -49,7 +49,7 @@ services:
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:8000/api/health/ || exit 1"]
-      interval: 30s
+      interval: 60s
       timeout: 10s
       retries: 3
       start_period: 30s

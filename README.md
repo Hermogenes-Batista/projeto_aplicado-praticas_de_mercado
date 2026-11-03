@@ -382,6 +382,8 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod logs -f --tail=10
 curl -i http://localhost:8000/api/health/
 ```
 
+O endpoint executa `SELECT 1` no MySQL. O health check do backend no Docker Compose de produção consulta esse endpoint a cada 60 segundos; retorna `200` quando o banco responde e `503` quando a conexão falha.
+
 #### Recarregar Nginx após alterações de configuração
 ```bash
 sudo nginx -t && sudo systemctl reload nginx

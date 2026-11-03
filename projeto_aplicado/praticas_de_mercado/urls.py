@@ -16,6 +16,7 @@ Including another URLconf
 """
 
 from django.contrib import admin
+from django.db import DatabaseError, connection
 from django.urls import path
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
@@ -25,8 +26,15 @@ from .schema import schema
 
 
 def health_check(request):
-    """Endpoint de health check utilizado pelo pipeline de CI/CD e pelo Nginx."""
-    return JsonResponse({"status": "ok"})
+    """Check backend and database connectivity for Docker and deployment health checks."""
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            cursor.fetchone()
+    except DatabaseError:
+        return JsonResponse({"status": "error", "database": "unavailable"}, status=503)
+
+    return JsonResponse({"status": "ok", "database": "ok"})
 
 
 urlpatterns = [
